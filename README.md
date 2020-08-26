@@ -87,7 +87,7 @@ Downloads can be found at:
 *Scraping the same profile again will only download new posts, provided that you are inside the same directory 
 when you run the program again.*
 
-*Scraping too much will get your IP address temporarily restricted by Instagram, this means that you can not
+*Scraping too much will get your IP address temporarily restricted by Instagram, this means that you cannot
 view any posts without being logged in.*
 
 Options

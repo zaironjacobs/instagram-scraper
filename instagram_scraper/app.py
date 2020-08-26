@@ -329,7 +329,7 @@ class App:
                 usernames.append(username)
 
         if len(usernames) < 1:
-            print('No requested user found in the database.')
+            print('User not found.')
             return
 
         usernames_str = ' '.join([str(username) for username in usernames])
@@ -355,7 +355,7 @@ class App:
                 tags.append(tag)
 
         if len(tags) < 1:
-            print('No requested tag found in the database.')
+            print('Tag not found.')
             return
 
         tags_str = ' '.join([str(tag) for tag in tags])
@@ -386,7 +386,7 @@ class App:
         usernames = [v for k, v in usernames_dict.items() if k in input_numbers]
 
         if len(usernames) < 1:
-            print('No requested user found in the database.')
+            print('User not found.')
             return
 
         usernames_str = ' '.join([str(username) for username in usernames])
@@ -418,7 +418,7 @@ class App:
         tags = [v for k, v in tags_dict.items() if k in input_numbers]
 
         if len(tags) < 1:
-            print('No requested tag found in the database.')
+            print('Tag not found.')
             return
 
         tags_str = ' '.join([str(tag) for tag in tags])
@@ -492,7 +492,7 @@ class App:
     def __choose_webdriver(self):
         """ Choose a webdriver to run the program """
 
-        answer = helper.choose_options('Choose a web driver', constants.WEB_DRIVERS)
+        answer = helper.choose_options('Choose a web driver', constants.WEBDRIVERS)
         if answer == constants.CHROMEDRIVER:
             self.__download_chromedriver()
             self.__save_webdriver_name(constants.CHROMEDRIVER)

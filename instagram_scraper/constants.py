@@ -1,12 +1,12 @@
 INSTAGRAM_URL = 'https://www.instagram.com/'
 
 CHROMEDRIVER = 'chromedriver'
-WEB_DRIVERS = [CHROMEDRIVER]
+WEBDRIVERS = [CHROMEDRIVER]
 
-CHROMEDRIVER_VERSION = 'v83.0.4103.39'
-CHROMEDRIVER_LINUX_URL = 'https://chromedriver.storage.googleapis.com/83.0.4103.39/chromedriver_linux64.zip'
-CHROMEDRIVER_WINDOWS_URL = 'https://chromedriver.storage.googleapis.com/83.0.4103.39/chromedriver_win32.zip'
-CHROMEDRIVER_MACOS_URL = 'https://chromedriver.storage.googleapis.com/83.0.4103.39/chromedriver_mac64.zip'
+CHROMEDRIVER_VERSION = 'v85.0.4183.83'
+CHROMEDRIVER_LINUX_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.83/chromedriver_linux64.zip'
+CHROMEDRIVER_WINDOWS_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.83/chromedriver_win32.zip'
+CHROMEDRIVER_MACOS_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.83/chromedriver_mac64.zip'
 
 LOG_FILE = 'igscraper.log'
 CHROMEDRIVER_LOG_FILE = 'chromedriver.log'
@@ -21,7 +21,8 @@ TAG_TERM_RECENT = 'recent'
 # CSS & ID
 USERNAME_CSS = '._7UhW9.fKFbl.yUEEX.KV-D4.fDxYl'
 POSTS_CSS = '.v1Nh3.kIKUG._bz0w'
-PAGE_NOT_AVAILABLE_PRIVATE_CSS = '.error-container.-cx-PRIVATE-ErrorPage__errorContainer.-cx-PRIVATE-ErrorPage__errorContainer__'
+PAGE_NOT_AVAILABLE_PRIVATE_CSS = ('.error-container.-cx-PRIVATE-ErrorPage__errorContainer.'
+                                  '-cx-PRIVATE-ErrorPage__errorContainer__')
 PAGE_NOT_AVAILABLE_PUBLIC_CSS = '.MCXLF'
 DISPLAY_PIC_PUBLIC_CSS = '._6q-tv'
 DISPLAY_PIC_PRIVATE_CSS = '.be6sR'
@@ -55,10 +56,8 @@ SETTINGS_CSS = '._8-yf5'
 POSTS_AMOUNT_CSS = '.g47SY '
 POST_TIME_CSS = '._1o9PC.Nzb55'
 SCROLL_LOAD_CSS = '.Igw0E.IwRSH.YBx95._4EzTm._9qQ0O.ZUqME'
-# FIREFOX_TRY_AGAIN_BUTTON_CSS = '.primary.try-again'
 CHROME_RELOAD_BUTTON_ID = 'reload-button'
 SORRY_ID = 'sorry'
-REACT_ROOT_ID = 'react-root'
 
 # XPATH
 TOP_TAGS_XPATH = '/html/body/div[1]/section/main/article/div[1]/div/div'

@@ -195,7 +195,7 @@ class Scraper:
                         service_log_path=os.devnull, options=driver_options)
                 except SessionNotCreatedException as err:
                     logger.error(err)
-                    print('Could not start session.')
+                    print('Could not start session, make sure you have the latest Chrome version installed.')
                     self.stop()
                 except WebDriverException as err:
                     logger.error(err)
