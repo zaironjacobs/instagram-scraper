@@ -79,7 +79,7 @@ class Scraper:
         for x, user in enumerate(users):
 
             self.__check_ip_restriction()
-            
+
             if x == 0:
                 sys.stdout.write('\n')
             print('\033[1m' + 'Username: ' + user.username + '\033[0;0m')
@@ -531,7 +531,7 @@ class Scraper:
 
         self.__go_to_link(link)
         try:
-            self.__browser.find_element_by_css_selector(constants.GROUP_INDICATORS_CSS)
+            self.__browser.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
             return True
         except (NoSuchElementException, StaleElementReferenceException):
             # Post has no multiple content, do nothing
