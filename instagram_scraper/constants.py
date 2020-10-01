@@ -10,7 +10,7 @@ CHROMEDRIVER_MACOS_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.
 
 LOG_FILE = 'igscraper.log'
 CHROMEDRIVER_LOG_FILE = 'chromedriver.log'
-WEBDRIVER_DIR = 'webdriver'
+WEBDRIVER_DIR = 'webdrivers'
 LOCAL_DB = 'igscraper.db'
 USERS_DIR = 'users'
 TAGS_DIR = 'tags'

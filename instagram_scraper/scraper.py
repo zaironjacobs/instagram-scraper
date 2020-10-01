@@ -34,7 +34,7 @@ class Scraper:
         self.__login_username = None
         self.__webdriver_interface = webdriver_interface
         self.__headful = headful
-        self.__browser = None
+        self.__browser_driver = None
         self.__maximum_download = maximum_download
         self.__login_username = login_username
         self.__post_save_success_count = 0
@@ -174,7 +174,7 @@ class Scraper:
     def __start_browser(self):
         """ Start the browser session """
 
-        if self.__browser is None:
+        if self.__browser_driver is None:
 
             if self.__webdriver_interface == constants.CHROMEDRIVER:
                 driver_options = ChromeOptions()
@@ -192,7 +192,7 @@ class Scraper:
                         self.stop()
 
                 try:
-                    self.__browser = webdriver.Chrome(
+                    self.__browser_driver = webdriver.Chrome(
                         executable_path=webdriver_path,
                         service_log_path=os.devnull, options=driver_options)
                 except SessionNotCreatedException as err:
@@ -205,8 +205,11 @@ class Scraper:
                     print(' Make sure Google Chrome is installed on your machine and is up to date.')
                     self.stop()
 
-                self.__browser.maximize_window()
-                self.__browser.set_page_load_timeout(WEBDRIVER_TIMEOUT)
+                if self.__headful:
+                    self.__browser_driver.maximize_window()
+                else:
+                    self.__browser_driver.set_window_size(1366, 768)
+                self.__browser_driver.set_page_load_timeout(WEBDRIVER_TIMEOUT)
 
             else:
                 print(self.__c_fore.RED + 'No webdriver provided.' + self.__c_style.RESET_ALL)
@@ -220,7 +223,7 @@ class Scraper:
             print('\nPage load timeout.')
             self.stop()
 
-        current_link = self.__browser.current_url
+        current_link = self.__browser_driver.current_url
         current_link = current_link.strip('/')
         link = link.strip('/')
 
@@ -229,20 +232,20 @@ class Scraper:
                 return
 
         try:
-            self.__browser.get(link)
+            self.__browser_driver.get(link)
 
-            WebDriverWait(self.__browser, 10).until(
+            WebDriverWait(self.__browser_driver, 10).until(
                 lambda d: d.execute_script('return document.readyState') == 'complete')
 
             try:
-                self.__browser.find_element_by_id(constants.CHROME_RELOAD_BUTTON_ID)
+                self.__browser_driver.find_element_by_id(constants.CHROME_RELOAD_BUTTON_ID)
                 self.__page_load_tries += 1
                 logger.warning('Could not load page.')
                 self.__go_to_link(link)
             except (NoSuchElementException, StaleElementReferenceException):
                 pass
             try:
-                self.__browser.find_element_by_id(constants.SORRY_ID)
+                self.__browser_driver.find_element_by_id(constants.SORRY_ID)
                 self.__page_load_tries += 1
                 logger.warning('Facebook error.')
                 self.__go_to_link(link)
@@ -264,8 +267,8 @@ class Scraper:
             if not self.__logout():
                 print('Logout failed.')
 
-        if self.__browser is not None:
-            self.__browser.quit()
+        if self.__browser_driver is not None:
+            self.__browser_driver.quit()
 
         self.__database.close_connection()
 
@@ -278,7 +281,7 @@ class Scraper:
         self.__go_to_link(url.format(username))
 
         try:
-            data = json.loads(self.__browser.find_element_by_tag_name('body').text)
+            data = json.loads(self.__browser_driver.find_element_by_tag_name('body').text)
             user_id = data['graphql']['user']['id']
             return user_id
         except JSONDecodeError as err:
@@ -306,7 +309,7 @@ class Scraper:
                 # Grab post links inside the xpath only
                 if xpath:
                     try:
-                        element_box = self.__browser.find_element_by_xpath(xpath)
+                        element_box = self.__browser_driver.find_element_by_xpath(xpath)
                         posts_element = element_box.find_elements_by_css_selector(constants.POSTS_CSS + ' [href]')
                         links += [post_element.get_attribute('href') for post_element in posts_element]
                     except (NoSuchElementException, StaleElementReferenceException) as err:
@@ -316,7 +319,7 @@ class Scraper:
                 # Grab all post links
                 else:
                     try:
-                        elements = self.__browser.find_elements_by_css_selector(constants.POSTS_CSS + ' [href]')
+                        elements = self.__browser_driver.find_elements_by_css_selector(constants.POSTS_CSS + ' [href]')
                     except (NoSuchElementException, StaleElementReferenceException) as err:
                         logger.error(err)
                         return []
@@ -337,16 +340,16 @@ class Scraper:
             # Remove any duplicates and return the list if maximum was reached
             post_links = sorted(set(post_links), key=lambda index: post_links.index(index))
             if len(post_links) >= self.__maximum_download:
-                self.__browser.maximize_window()
+                self.__browser_driver.maximize_window()
                 return post_links[:self.__maximum_download]
 
             # Scroll down to bottom
-            self.__browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            self.__browser_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(0.5)
 
             # If instagram asks to show more posts, click it
             try:
-                element = self.__browser.find_element_by_css_selector(constants.SHOW_MORE_POSTS_CSS)
+                element = self.__browser_driver.find_element_by_css_selector(constants.SHOW_MORE_POSTS_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 # No show more posts button found, do nothing
                 pass
@@ -354,15 +357,15 @@ class Scraper:
                 element.click()
 
             try:
-                self.__browser.find_element_by_css_selector(constants.SCROLL_LOAD_CSS)
+                self.__browser_driver.find_element_by_css_selector(constants.SCROLL_LOAD_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 # Reached the end, grab links for the last time, remove any duplicates and return the list
                 post_links += grab_links()
-                self.__browser.maximize_window()
+                self.__browser_driver.maximize_window()
                 return sorted(set(post_links), key=lambda index: post_links.index(index))[:self.__maximum_download]
             else:
                 # Change the browser height to prevent randomly being stuck while scrolling down
-                height = self.__browser.get_window_size()['height']
+                height = self.__browser_driver.get_window_size()['height']
                 if increment_browser_height:
                     height += 25
                     increment_browser_height = False
@@ -370,8 +373,8 @@ class Scraper:
                     height -= 25
                     increment_browser_height = True
 
-                width = self.__browser.get_window_size()['width']
-                self.__browser.set_window_size(width, height)
+                width = self.__browser_driver.get_window_size()['width']
+                self.__browser_driver.set_window_size(width, height)
 
     def __scrape_top_tags(self, link, tag):
         """ Find the post links from the top tags """
@@ -381,7 +384,7 @@ class Scraper:
         self.__go_to_link(link)
 
         try:
-            top_tags_box_element = self.__browser.find_element_by_xpath(constants.TOP_TAGS_XPATH)
+            top_tags_box_element = self.__browser_driver.find_element_by_xpath(constants.TOP_TAGS_XPATH)
         except (NoSuchElementException, StaleElementReferenceException):
             print(self.__c_fore.RED + 'No posts found.' + self.__c_style.RESET_ALL)
             return
@@ -456,7 +459,7 @@ class Scraper:
 
         # Check if page is available
         try:
-            self.__browser.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PUBLIC_CSS)
+            self.__browser_driver.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PUBLIC_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No "page isn't available" message found, do nothing
             pass
@@ -464,7 +467,7 @@ class Scraper:
             logger.warning('Page not available at %s', link)
             return False
         try:
-            self.__browser.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PRIVATE_CSS)
+            self.__browser_driver.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PRIVATE_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No "page isn't available" message found, do nothing29;\hV65_l+yP4h=0lv*3@SH_
             pass
@@ -475,14 +478,14 @@ class Scraper:
         # Try to load post link again if Instagram asks to login
         attempts = 5
         try:
-            self.__browser.find_element_by_css_selector(constants.LOGIN_BOX_CSS)
+            self.__browser_driver.find_element_by_css_selector(constants.LOGIN_BOX_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No login box found, do nothing
             pass
         else:
             logger.warning('Post link %s was redirected to login page.', link)
             for _ in range(attempts):
-                if self.__browser.current_url != link:
+                if self.__browser_driver.current_url != link:
                     self.__go_to_link(link)
                 else:
                     break
@@ -511,14 +514,14 @@ class Scraper:
         display_picture_url = None
 
         try:
-            element = self.__browser.find_element_by_css_selector(constants.DISPLAY_PIC_PUBLIC_CSS)
+            element = self.__browser_driver.find_element_by_css_selector(constants.DISPLAY_PIC_PUBLIC_CSS)
             display_picture_url = element.get_attribute('src')
         except (NoSuchElementException, StaleElementReferenceException):
             # No display pic found (public profile)
             pass
 
         try:
-            element = self.__browser.find_element_by_css_selector(constants.DISPLAY_PIC_PRIVATE_CSS)
+            element = self.__browser_driver.find_element_by_css_selector(constants.DISPLAY_PIC_PRIVATE_CSS)
             display_picture_url = element.get_attribute('src')
         except (NoSuchElementException, StaleElementReferenceException):
             # No display pic found (private profile)
@@ -533,7 +536,7 @@ class Scraper:
 
         self.__go_to_link(link)
         try:
-            self.__browser.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
+            self.__browser_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
             return True
         except (NoSuchElementException, StaleElementReferenceException):
             # Post has no multiple content, do nothing
@@ -545,7 +548,7 @@ class Scraper:
         # Get the published date of the post
         date_time = None
         try:
-            element = self.__browser.find_element_by_css_selector(constants.POST_TIME_CSS)
+            element = self.__browser_driver.find_element_by_css_selector(constants.POST_TIME_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
         else:
@@ -553,7 +556,7 @@ class Scraper:
 
         # Get the image
         try:
-            element = self.__browser.find_element_by_css_selector(constants.IMG_CSS)
+            element = self.__browser_driver.find_element_by_css_selector(constants.IMG_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # Is not an image, do nothing
             pass
@@ -567,7 +570,7 @@ class Scraper:
 
         # Get the video
         try:
-            element = self.__browser.find_element_by_css_selector(constants.VID_CSS)
+            element = self.__browser_driver.find_element_by_css_selector(constants.VID_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # Is not a video, do nothing
             pass
@@ -589,7 +592,7 @@ class Scraper:
             """ Go to the next content in a post with multiple content """
 
             try:
-                next_element = self.__browser.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
+                next_element = self.__browser_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
             except (NoSuchElementException, StaleElementReferenceException) as error:
                 logger.error(error)
             else:
@@ -601,7 +604,7 @@ class Scraper:
         # Get the published date of the post
         date_time = None
         try:
-            element = self.__browser.find_element_by_css_selector(constants.POST_TIME_CSS)
+            element = self.__browser_driver.find_element_by_css_selector(constants.POST_TIME_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
         else:
@@ -609,7 +612,7 @@ class Scraper:
 
         # Get amount of content in the post
         try:
-            elements = self.__browser.find_elements_by_css_selector(constants.INDICATOR)
+            elements = self.__browser_driver.find_elements_by_css_selector(constants.INDICATOR)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             logger.error('Error downloading post: %s', link)
@@ -622,7 +625,7 @@ class Scraper:
 
             # Find the ul element that contains the contents
             try:
-                ul_element = self.__browser.find_element_by_css_selector(constants.MULTIPLE_CONTENT_UL_CSS)
+                ul_element = self.__browser_driver.find_element_by_css_selector(constants.MULTIPLE_CONTENT_UL_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 return False
 
@@ -698,7 +701,7 @@ class Scraper:
         self.__go_to_link(user.stories_link)
 
         try:
-            tap_element = self.__browser.find_element_by_css_selector(constants.STORIES_TAP_CSS)
+            tap_element = self.__browser_driver.find_element_by_css_selector(constants.STORIES_TAP_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             print('Could not download stories, for more information check the log.')
@@ -709,11 +712,11 @@ class Scraper:
         success = 0
         progress_bar = ProgressBar(stories_count, show_count=True)
         for i in range(stories_count):
-            next_story_button = self.__browser.find_element_by_css_selector(constants.STORIES_NEXT_CSS)
+            next_story_button = self.__browser_driver.find_element_by_css_selector(constants.STORIES_NEXT_CSS)
 
             # Check if the story is a video and download it
             try:
-                vid_elements = self.__browser.find_element_by_css_selector(constants.STORIES_VID_CSS)
+                vid_elements = self.__browser_driver.find_element_by_css_selector(constants.STORIES_VID_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 # Is not a video, do nothing
                 pass
@@ -732,7 +735,7 @@ class Scraper:
 
             # Check if the story is an image and download it
             try:
-                img_element = self.__browser.find_element_by_css_selector(
+                img_element = self.__browser_driver.find_element_by_css_selector(
                     'img[class="' + constants.STORIES_IMG_CSS[1:] + '"]')
             except (NoSuchElementException, StaleElementReferenceException):
                 # Is not an image, do nothing
@@ -764,7 +767,7 @@ class Scraper:
         self.__go_to_link(user.stories_link)
         time.sleep(2)
         try:
-            stories_bar = self.__browser.find_elements_by_css_selector(constants.STORIES_BAR_CSS)
+            stories_bar = self.__browser_driver.find_elements_by_css_selector(constants.STORIES_BAR_CSS)
             return len(stories_bar)
         except (NoSuchElementException, StaleElementReferenceException):
             pass
@@ -775,7 +778,7 @@ class Scraper:
 
         self.__go_to_link(user.profile_link)
         try:
-            self.__browser.find_element_by_css_selector(constants.USER_PRIVATE_CSS)
+            self.__browser_driver.find_element_by_css_selector(constants.USER_PRIVATE_CSS)
             return True
         except (NoSuchElementException, StaleElementReferenceException):
             return False
@@ -785,7 +788,7 @@ class Scraper:
 
         self.__go_to_link(user.profile_link)
         try:
-            self.__browser.find_element_by_css_selector(constants.POSTS_CSS)
+            self.__browser_driver.find_element_by_css_selector(constants.POSTS_CSS)
             return True
         except (NoSuchElementException, StaleElementReferenceException):
             return False
@@ -798,7 +801,7 @@ class Scraper:
 
         # Get the credential element
         try:
-            credential_elements = self.__browser.find_elements_by_css_selector(constants.CREDENTIALS_CSS)
+            credential_elements = self.__browser_driver.find_elements_by_css_selector(constants.CREDENTIALS_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
@@ -825,7 +828,7 @@ class Scraper:
 
         # Click login button
         try:
-            button_element = self.__browser.find_element_by_css_selector(constants.LOGIN_BUTTON_CSS)
+            button_element = self.__browser_driver.find_element_by_css_selector(constants.LOGIN_BUTTON_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
@@ -835,7 +838,7 @@ class Scraper:
 
         # Enter security code if asked for
         try:
-            security_input_box = self.__browser.find_element_by_css_selector(constants.SECURITY_INPUT_BOX_CSS)
+            security_input_box = self.__browser_driver.find_element_by_css_selector(constants.SECURITY_INPUT_BOX_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             pass
         else:
@@ -844,7 +847,8 @@ class Scraper:
             try:
                 security_code = getpass.getpass(prompt='Enter security code: ')
                 security_input_box.send_keys(security_code)
-                security_button_element = self.__browser.find_element_by_css_selector(constants.SECURITY_BOX_BUTTON)
+                security_button_element = self.__browser_driver.find_element_by_css_selector(
+                    constants.SECURITY_BOX_BUTTON)
             except (NoSuchElementException, StaleElementReferenceException) as err:
                 logger.info(err)
                 return False
@@ -854,7 +858,7 @@ class Scraper:
 
         # Click no if asked to save login info
         try:
-            not_save_login_button = self.__browser.find_element_by_css_selector(
+            not_save_login_button = self.__browser_driver.find_element_by_css_selector(
                 constants.NOT_SAVE_LOGIN_INFO_BUTTON_CSS)
         except(NoSuchElementException, StaleElementReferenceException):
             # User was not asked to save login info, do nothing
@@ -865,7 +869,7 @@ class Scraper:
 
         # Check for failed login message
         try:
-            self.__browser.find_element_by_css_selector(constants.FAILED_LOGIN_MESSAGE_CSS)
+            self.__browser_driver.find_element_by_css_selector(constants.FAILED_LOGIN_MESSAGE_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No failed login message found, do nothing
             pass
@@ -874,7 +878,7 @@ class Scraper:
 
         # Check if Instagram shows popup asking to turn on notifications
         try:
-            no_notifications_element = self.__browser.find_element_by_css_selector(
+            no_notifications_element = self.__browser_driver.find_element_by_css_selector(
                 constants.NO_NOTIFICATIONS_BUTTON_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No popup found, do nothing
@@ -891,7 +895,7 @@ class Scraper:
 
         # Click settings
         try:
-            settings_button_element = self.__browser.find_element_by_css_selector(constants.SETTINGS_CSS)
+            settings_button_element = self.__browser_driver.find_element_by_css_selector(constants.SETTINGS_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
@@ -901,7 +905,7 @@ class Scraper:
 
         # Get settings buttons elements
         try:
-            settings_list_elements = self.__browser.find_elements_by_css_selector(constants.SETTINGS_BUTTONS_CSS)
+            settings_list_elements = self.__browser_driver.find_elements_by_css_selector(constants.SETTINGS_BUTTONS_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
