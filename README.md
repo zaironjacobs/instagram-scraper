@@ -7,72 +7,71 @@ Instagram Scraper
 
 A command-line application that uses Selenium to download all posts and stories from an Instagram profile.
 
-How to install
------
+## Install
+
 To install:
-```bash
+```console
 $ pip install igscraper
 ```
 
 To upgrade:
-```bash
+```console
 $ pip install igscraper --upgrade
 ```
 
-How to use
------
+## Usage
 
-Create a new directory for the downloads, then cd into the directory and run the program.
+Create a new directory called "igscraper" or any other name and cd into the directory.
 
 Scrape a profile:
-```bash
+```console
 $ igscraper username1 username2 username3
 ```
 
 *With --max you can provide a maximum amount of posts to download*
 
 To scrape stories you have to be logged in first. Login and scrape a profile:
-```bash
+```console
 $ igscraper username1 username2 username3 --login-username username
 ```
 
 Scrape a tag:
-```bash
+```console
 $ igscraper --recent-tags tag1 tag2 --max 10
 ```
 
-```bash
+```console
 $ igscraper --top-tags tag1 tag2
 ```
 
 List all scraped users or tags:
-```bash
+```console
 $ igscraper --list-users
 ```
 
-```bash
+```console
 $ igscraper --list-tags
 ```
 
 Remove users or tags:
-```bash
+```console
 $ igscraper --remove-users username1 username2
 ```
 
-```bash
+```console
 $ igscraper --remove-tags tag1 tag2
 ```
 
 Alternative method to remove users or tags by list number:
-```bash
+```console
 $ igscraper --remove-users-n 1 2
 ```
 
-```bash
+```console
 $ igscraper --remove-tags-n 1 2
 ```
 
-Downloads can be found at:
+#### Downloads can be found at:
 
 *`<current directory>/<users>/<username>/<display_photo>`*
 
@@ -90,8 +89,7 @@ when you run the program again.*
 *Scraping too much will get your IP address temporarily restricted by Instagram, this means that you cannot
 view any posts without being logged in.*
 
-Options
--------
+## Options
 
 ```
 --help                  Show help message and exit.

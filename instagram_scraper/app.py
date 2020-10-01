@@ -55,7 +55,7 @@ class App:
         parser.add_argument('--recent-tags', '--recent_tags', help='recent tags to scrape', nargs='*')
         parser.add_argument('--max', metavar='', help='maximum number of posts to scrape')
         parser.add_argument('--headful', help='display the browser UI', action='store_true')
-        parser.add_argument('--set-driver', '--set_driver', help='choose a webdriver', action='store_true')
+        parser.add_argument('--set-driver', '--set_driver', help='choose a web driver', action='store_true')
         parser.add_argument('--list-users', '--list_users', help='list all scraped users', action='store_true')
         parser.add_argument('--list-tags', '--list_tags', help='list all scraped tags', action='store_true')
         parser.add_argument('--remove-users', '--remove_users', nargs='+', metavar='',
@@ -205,10 +205,10 @@ class App:
             scraper.init_scrape_users(users)
 
         if len(top_tags) > 0:
-            scraper.init_scrape_tags(top_tags, constants.TAG_TERM_TOP)
+            scraper.init_scrape_tags(top_tags, constants.TAG_TYPE_TOP)
 
         if len(recent_tags) > 0:
-            scraper.init_scrape_tags(recent_tags, constants.TAG_TERM_RECENT)
+            scraper.init_scrape_tags(recent_tags, constants.TAG_TYPE_RECENT)
 
         scraper.stop()
 
@@ -482,7 +482,7 @@ class App:
         return tags_dict
 
     def __get_current_webdriver_name(self):
-        """ Get the name of the current webdriver to use """
+        """ Get the name of the current set web driver """
 
         database = Database()
         webdriver_name = database.get_webdriver_name()
@@ -490,7 +490,7 @@ class App:
         return webdriver_name
 
     def __choose_webdriver(self):
-        """ Choose a webdriver to run the program """
+        """ Choose a web driver to run the program """
 
         answer = helper.choose_options('Choose a web driver', constants.WEBDRIVERS)
         if answer == constants.CHROMEDRIVER:
@@ -499,7 +499,7 @@ class App:
             self.webdriver_interface = constants.CHROMEDRIVER
 
     def __save_webdriver_name(self, webdriver_name):
-        """ Save webdriver name in database """
+        """ Save web driver name in database """
 
         database = Database()
         database.set_webdriver_name(webdriver_name)
@@ -510,12 +510,12 @@ class App:
 
         download_completed = False
 
-        for root, dirs, files in os.walk(constants.WEBDRIVERS_DIR):
+        for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
             for file in files:
                 if file[:len(constants.CHROMEDRIVER)] == constants.CHROMEDRIVER:
                     return
 
-        helper.create_dir(constants.WEBDRIVERS_DIR)
+        helper.create_dir(constants.WEBDRIVER_DIR)
 
         answer = helper.yes_or_no('Would you like to download chromedriver now?')
         if answer:
@@ -526,54 +526,55 @@ class App:
                 print('Downloading chromedriver-' + version + ': ')
                 try:
                     wget.download(constants.CHROMEDRIVER_LINUX_URL,
-                                  constants.WEBDRIVERS_DIR + '/' + driver_file_name + '.zip')
+                                  constants.WEBDRIVER_DIR + '/' + driver_file_name + '.zip')
                 except HTTPError as err:
                     logger.error(err)
                     print('Download error.')
                     sys.exit(0)
 
-                with zipfile.ZipFile(constants.WEBDRIVERS_DIR + '/' + driver_file_name + '.zip', 'r') as zip_ref:
-                    zip_ref.extractall(constants.WEBDRIVERS_DIR)
-                    os.chmod(constants.WEBDRIVERS_DIR + '/' + constants.CHROMEDRIVER, 0o755)
+                with zipfile.ZipFile(constants.WEBDRIVER_DIR + '/' + driver_file_name + '.zip', 'r') as zip_ref:
+                    zip_ref.extractall(constants.WEBDRIVER_DIR)
+                    os.chmod(constants.WEBDRIVER_DIR + '/' + constants.CHROMEDRIVER, 0o755)
                 download_completed = True
 
             elif platform.system() == 'Windows':
                 print('Downloading chromedriver-' + version + ': ')
                 try:
                     wget.download(constants.CHROMEDRIVER_WINDOWS_URL,
-                                  constants.WEBDRIVERS_DIR + '/' + driver_file_name + '.zip')
+                                  constants.WEBDRIVER_DIR + '/' + driver_file_name + '.zip')
                 except HTTPError as err:
                     logger.error(err)
                     print('Download error.')
                     sys.exit(0)
 
-                with zipfile.ZipFile(constants.WEBDRIVERS_DIR + '/' + driver_file_name + '.zip', 'r') as zip_ref:
-                    zip_ref.extractall(constants.WEBDRIVERS_DIR)
-                    os.chmod(constants.WEBDRIVERS_DIR + '/' + constants.CHROMEDRIVER + '.exe', 0o755)
+                with zipfile.ZipFile(constants.WEBDRIVER_DIR + '/' + driver_file_name + '.zip', 'r') as zip_ref:
+                    zip_ref.extractall(constants.WEBDRIVER_DIR)
+                    os.chmod(constants.WEBDRIVER_DIR + '/' + constants.CHROMEDRIVER + '.exe', 0o755)
                 download_completed = True
 
             elif platform.system() == 'Darwin':
                 print('Downloading chromedriver-' + version + ': ')
                 try:
                     wget.download(constants.CHROMEDRIVER_MACOS_URL,
-                                  constants.WEBDRIVERS_DIR + '/' + driver_file_name + '.zip')
+                                  constants.WEBDRIVER_DIR + '/' + driver_file_name + '.zip')
                 except HTTPError as err:
                     logger.error(err)
                     print('Download error.')
                     sys.exit(0)
 
-                with zipfile.ZipFile(constants.WEBDRIVERS_DIR + '/' + driver_file_name + '.zip', 'r') as zip_ref:
-                    zip_ref.extractall(constants.WEBDRIVERS_DIR)
-                    os.chmod(constants.WEBDRIVERS_DIR + '/' + constants.CHROMEDRIVER, 0o755)
+                with zipfile.ZipFile(constants.WEBDRIVER_DIR + '/' + driver_file_name + '.zip', 'r') as zip_ref:
+                    zip_ref.extractall(constants.WEBDRIVER_DIR)
+                    os.chmod(constants.WEBDRIVER_DIR + '/' + constants.CHROMEDRIVER, 0o755)
                 download_completed = True
 
         else:
-            print('Manually download chromedriver ' + constants.CHROMEDRIVER_VERSION + ' and place the file in ' +
-                  'working-directory/webdriver/chromedriver/')
+            print(
+                'Manually download the correct chromedriver for your current installed Chrome web browser ' +
+                'and place the file in "working-directory/' + constants.WEBDRIVER_DIR + '/chromedriver"')
             sys.exit(0)
 
         if download_completed:
-            helper.remove_file(constants.WEBDRIVERS_DIR + '/' + driver_file_name + '.zip')
+            helper.remove_file(constants.WEBDRIVER_DIR + '/' + driver_file_name + '.zip')
             print('\n' + self.__download_completed_str + '\n')
 
 

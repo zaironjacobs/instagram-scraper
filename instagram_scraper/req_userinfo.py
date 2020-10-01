@@ -11,27 +11,7 @@ from requests.exceptions import RequestException
 from requests.exceptions import ConnectionError
 from simplejson.errors import JSONDecodeError
 
-REQUESTS_TIMEOUT = 15
-SESSION_RETRY = 2
-
 logger = logging.getLogger('__name__')
-
-
-def __retry_session(total):
-    """ Retry session for requests """
-
-    retry = Retry(
-        total=total,
-        backoff_factor=1,
-        status_forcelist=[429, 500, 502, 503, 504],
-        method_whitelist=["GET"]
-    )
-
-    adapter = HTTPAdapter(max_retries=retry)
-    session = requests.Session()
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-    return session
 
 
 def get_username_by_id(user_id):
@@ -42,8 +22,11 @@ def get_username_by_id(user_id):
     }
 
     try:
-        session = __retry_session(total=SESSION_RETRY)
-        res = session.get(url.format(user_id), timeout=REQUESTS_TIMEOUT, headers=headers)
+        session = __retry_session(retries=3,
+                                  backoff_factor=0.1,
+                                  status_forcelist=[429, 500, 502, 503, 504],
+                                  method_whitelist=['GET'])
+        res = session.get(url.format(user_id), timeout=15, headers=headers)
     except (HTTPError, ConnectionError, Timeout, RequestException) as err:
         logger.error(err)
     else:
@@ -61,3 +44,21 @@ def get_username_by_id(user_id):
                 else:
                     return username
     return None
+
+
+def __retry_session(retries, backoff_factor, status_forcelist, method_whitelist):
+    """ Retry session """
+
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+        method_whitelist=method_whitelist)
+
+    adapter = HTTPAdapter(max_retries=retry)
+    session = requests.Session()
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session

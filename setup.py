@@ -7,18 +7,18 @@ with open('README.md', 'r') as fh:
 
 requires = [
     'colorama>=0.4.3',
-    'requests>=2.23.0',
+    'requests>=2.24.0',
     'selenium>=3.141.0',
-    'urllib3>=1.25.9',
+    'urllib3>=1.25.10',
     'wget>=3.2',
-    'simplejson>=3.17.0'
+    'simplejson>=3.17.2'
 ]
 
 setup(
     name='igscraper',
     version=__version__,
     author='Zairon Jacobs',
-    author_email='zaijacobs@gmail.com',
+    author_email='zaironjacobs@gmail.com',
     description=('A command line application that uses Selenium to download all posts '
                  'and stories from an Instagram profile.'),
     long_description=long_description,

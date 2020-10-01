@@ -64,7 +64,7 @@ class Scraper:
     def __check_ip_restriction(self):
         # Check if the official Instagram profile can be seen
         # If not, then Instagram has temporarily restricted the ip address (login required to view profiles)
-        if self.__login_username is None and self.__get_id_by_username('instagram') is None:
+        if self.__get_id_by_username('instagram') is None:
             print(self.__c_fore.RED +
                   'Unable to load profiles at this time (IP temporarily restricted by Instagram).' +
                   self.__c_style.RESET_ALL)
@@ -78,7 +78,8 @@ class Scraper:
 
         for x, user in enumerate(users):
 
-            self.__check_ip_restriction()
+            if not self.__is_logged_in:
+                self.__check_ip_restriction()
 
             if x == 0:
                 sys.stdout.write('\n')
@@ -133,7 +134,7 @@ class Scraper:
 
                 progress_bar = ProgressBar(len(user.post_links), show_count=True)
                 for link in user.post_links:
-                    if self.__prepare_scrape_page(link, user.output_user_posts_path, userid):
+                    if self.__prepare_to_scrape_page(link, user.output_user_posts_path, userid):
                         progress_bar.update(1)
                 progress_bar.close()
 
@@ -146,14 +147,15 @@ class Scraper:
 
             sys.stdout.write('\n')
 
-    def init_scrape_tags(self, tags, tag_term):
+    def init_scrape_tags(self, tags, tag_type):
         """ Start function for scraping tags """
 
         helper.create_dir(constants.TAGS_DIR)
 
         for tag in tags:
 
-            self.__check_ip_restriction()
+            if not self.__is_logged_in:
+                self.__check_ip_restriction()
 
             print('\033[1m' + 'Tag: #' + tag.tagname + '\033[0;0m')
 
@@ -162,9 +164,9 @@ class Scraper:
             link = 'https://www.instagram.com/explore/tags/' + tag.tagname + '/'
             self.__database.insert_tag(tag.tagname)
 
-            if tag_term == constants.TAG_TERM_TOP:
+            if tag_type == constants.TAG_TYPE_TOP:
                 self.__scrape_top_tags(link, tag)
-            elif tag_term == constants.TAG_TERM_RECENT:
+            elif tag_type == constants.TAG_TYPE_RECENT:
                 self.__scrape_recent_tags(link, tag)
 
         sys.stdout.write('\n')
@@ -180,10 +182,10 @@ class Scraper:
                 driver_options.headless = not self.__headful
 
                 webdriver_path = None
-                for root, dirs, files in os.walk(constants.WEBDRIVERS_DIR):
+                for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
                     for file in files:
                         if file[:len(constants.CHROMEDRIVER)].lower() == constants.CHROMEDRIVER.lower():
-                            webdriver_path = constants.WEBDRIVERS_DIR + '/' + file
+                            webdriver_path = constants.WEBDRIVER_DIR + '/' + file
                             break
                     else:
                         print(self.__c_fore.RED + 'Webdriver for Google Chrome not found.' + self.__c_style.RESET_ALL)
@@ -344,7 +346,7 @@ class Scraper:
 
             # If instagram asks to show more posts, click it
             try:
-                element = self.__browser.find_element_by_css_selector(constants.SHOW_MORE_CSS)
+                element = self.__browser.find_element_by_css_selector(constants.SHOW_MORE_POSTS_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 # No show more posts button found, do nothing
                 pass
@@ -402,7 +404,7 @@ class Scraper:
                   self.__c_style.RESET_ALL)
             progress_bar = ProgressBar(len(tag.post_links), show_count=True)
             for post_link in tag.post_links:
-                if self.__prepare_scrape_page(post_link, tag.output_top_tag_path):
+                if self.__prepare_to_scrape_page(post_link, tag.output_top_tag_path):
                     self.__database.insert_tag_post(post_link, tag.tagname, in_top=True)
                     progress_bar.update(1)
             progress_bar.close()
@@ -432,7 +434,7 @@ class Scraper:
 
         progress_bar = ProgressBar(len(tag.post_links), show_count=True)
         for post_link in tag.post_links:
-            if self.__prepare_scrape_page(post_link, tag.output_recent_tag_path):
+            if self.__prepare_to_scrape_page(post_link, tag.output_recent_tag_path):
                 self.__database.insert_tag_post(post_link, tag.tagname, in_recent=True)
                 progress_bar.update(1)
         progress_bar.close()
@@ -444,9 +446,9 @@ class Scraper:
                 self.__c_fore.RED + 'Not all posts have been saved. For more information check the log file.' +
                 self.__c_style.RESET_ALL)
 
-    def __prepare_scrape_page(self, link, output_path, userid=None):
+    def __prepare_to_scrape_page(self, link, output_path, userid=None):
         """
-        Loads the post page and decides whether to start scraping for a post with
+        Load the post page and check whether to start scraping for a post with
         single content or multiple content
         """
 
@@ -538,7 +540,7 @@ class Scraper:
             return False
 
     def __scrape_post_single_content(self, link, output_path):
-        """ Find the src url of images or videos from a post with one content and save """
+        """ Find the src url of an image or video from a post with a single content and download it"""
 
         # Get the published date of the post
         date_time = None
@@ -581,7 +583,7 @@ class Scraper:
         return False
 
     def __scrape_post_multiple_content(self, link, output_path):
-        """ Find the src url of images and videos from a post with multiple content and save """
+        """ Find the src url of images and videos from a post with multiple content and download it """
 
         def click_next_control():
             """ Go to the next content in a post with multiple content """
