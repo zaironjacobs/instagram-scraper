@@ -1,5 +1,3 @@
-import os
-import sys
 import logging
 
 from urllib3.util.retry import Retry

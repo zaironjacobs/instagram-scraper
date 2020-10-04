@@ -1,16 +1,11 @@
 INSTAGRAM_URL = 'https://www.instagram.com/'
+INSTAGRAM_USER_INFO_URL = 'https://www.instagram.com/{}/?__a=1'
 
 CHROMEDRIVER = 'chromedriver'
-WEBDRIVERS = [CHROMEDRIVER]
-
-CHROMEDRIVER_VERSION = 'v85.0.4183.87'
-CHROMEDRIVER_LINUX_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip'
-CHROMEDRIVER_WINDOWS_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_win32.zip'
-CHROMEDRIVER_MACOS_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_mac64.zip'
 
 LOG_FILE = 'igscraper.log'
 CHROMEDRIVER_LOG_FILE = 'chromedriver.log'
-WEBDRIVER_DIR = 'webdrivers'
+WEBDRIVER_DIR = 'webdriver'
 LOCAL_DB = 'igscraper.db'
 USERS_DIR = 'users'
 TAGS_DIR = 'tags'

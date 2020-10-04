@@ -21,7 +21,7 @@ $ pip install igscraper --upgrade
 
 ## Usage
 
-Create a new directory called "igscraper" or any other name and cd into the directory.
+Create a new directory and cd into the directory.
 
 Scrape a profile:
 ```console
@@ -96,7 +96,7 @@ view any posts without being logged in.*
 
 --login-username        Instagram login username.
 
---update-users          Check all scraped users for new posts.
+--update-users          Check all previously scraped users for new posts.
 
 --top-tags              Top tags to scrape.
 
