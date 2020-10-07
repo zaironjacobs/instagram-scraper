@@ -1,5 +1,3 @@
-import os
-import sys
 import sqlite3
 import logging
 import uuid
@@ -34,13 +32,6 @@ class Database:
                            "FOREIGN KEY(tag_id) REFERENCES tag(id) ON DELETE CASCADE, " +
                            "FOREIGN KEY(post_id) REFERENCES post(id) ON DELETE CASCADE, " +
                            "PRIMARY KEY(tag_id, post_id) );")
-
-            cursor.execute("CREATE TABLE IF NOT EXISTS options " +
-                           "(id INTEGER PRIMARY KEY CHECK (id=0), webdriver TEXT);")
-
-            query_options = "INSERT OR IGNORE INTO options VALUES (:id, :webdriver);"
-            values_options = {'id': 0, 'webdriver': None}
-            self.__execute_query_and_commit(query_options, values_options)
 
         except sqlite3.Error as err:
             logger.error(err)
@@ -102,10 +93,6 @@ class Database:
                       'user_id': userid}
             self.__execute_query_and_commit(query, values)
 
-    def set_webdriver_name(self, webdriver_name):
-        query = "UPDATE options SET webdriver='" + webdriver_name + "' WHERE id=0;"
-        self.__execute_query_and_commit(query)
-
     def retrieve_all_usernames(self):
         query = "SELECT username FROM user ORDER BY username ASC;"
         data = self.__execute_query_and_fetch(query)
@@ -156,14 +143,6 @@ class Database:
         for row in data:
             post_links.append(row[0])
         return post_links
-
-    def get_webdriver_name(self):
-        query = "SELECT webdriver FROM options LIMIT 1;"
-        data = self.__execute_query_and_fetch(query)
-
-        if len(data) > 0:
-            return data[0][0]
-        return None
 
     def user_post_link_exists(self, username, link):
         query = "SELECT EXISTS (SELECT 1 FROM post WHERE link ='" + link + "' AND user_id=(SELECT id FROM user WHERE" \

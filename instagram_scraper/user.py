@@ -1,5 +1,4 @@
 import os
-import sys
 
 from instagram_scraper import constants
 from instagram_scraper import helper

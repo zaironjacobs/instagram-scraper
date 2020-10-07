@@ -1,16 +1,12 @@
 INSTAGRAM_URL = 'https://www.instagram.com/'
+INSTAGRAM_USER_INFO_URL_DEFAULT = 'https://www.instagram.com/{}/?__a=1'
+INSTAGRAM_USER_INFO_URL_MOBILE = 'https://i.instagram.com/api/v1/users/{}/info/'
 
 CHROMEDRIVER = 'chromedriver'
-WEBDRIVERS = [CHROMEDRIVER]
-
-CHROMEDRIVER_VERSION = 'v85.0.4183.87'
-CHROMEDRIVER_LINUX_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip'
-CHROMEDRIVER_WINDOWS_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_win32.zip'
-CHROMEDRIVER_MACOS_URL = 'https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_mac64.zip'
 
 LOG_FILE = 'igscraper.log'
 CHROMEDRIVER_LOG_FILE = 'chromedriver.log'
-WEBDRIVER_DIR = 'webdrivers'
+WEBDRIVER_DIR = 'webdriver'
 LOCAL_DB = 'igscraper.db'
 USERS_DIR = 'users'
 TAGS_DIR = 'tags'
@@ -55,6 +51,7 @@ SETTINGS_CSS = '._8-yf5'
 POSTS_AMOUNT_CSS = '.g47SY '
 POST_TIME_CSS = '._1o9PC.Nzb55'
 SCROLL_LOAD_CSS = '.Igw0E.IwRSH.YBx95._4EzTm._9qQ0O.ZUqME'
+ACCEPT_COOKIES_CSS = '.aOOlW.bIiDR'
 CHROME_RELOAD_BUTTON_ID = 'reload-button'
 SORRY_ID = 'sorry'
 

@@ -3,9 +3,9 @@ import sys
 import time
 import getpass
 import logging
-import json
+import datetime
+import platform
 
-from json.decoder import JSONDecodeError
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.common.exceptions import NoSuchElementException
@@ -15,60 +15,66 @@ from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import SessionNotCreatedException
 from selenium.webdriver.support.wait import WebDriverWait
+from requests.exceptions import RequestException
 import colorama
 
+from instagram_scraper.database import Database
 from instagram_scraper import constants
 from instagram_scraper.progress_bar import ProgressBar
 from instagram_scraper import helper
-from instagram_scraper.url_saver import save_image, save_video
-
-WEBDRIVER_TIMEOUT = 1800000
+from instagram_scraper import retriever
+from instagram_scraper import get_data
 
 logger = logging.getLogger('__name__')
 
 
 class Scraper:
 
-    def __init__(self, database, webdriver_interface, headful, maximum_download, login_username):
-        self.__database = database
-        self.__login_username = None
-        self.__webdriver_interface = webdriver_interface
+    def __init__(self, headful, max_download, login_username):
+        self.__database = Database()
+        self.__database.create_tables()
+
         self.__headful = headful
-        self.__browser_driver = None
-        self.__maximum_download = maximum_download
+        self.__max_download = max_download
         self.__login_username = login_username
-        self.__post_save_success_count = 0
+
         self.__is_logged_in = False
         self.__download_stories = False
         self.__page_load_tries = 0
+        self.__cookies_accepted = False
+
         self.__c_fore = colorama.Fore
         self.__c_style = colorama.Style
         colorama.init()
 
-        # Stat the webdriver
-        self.__start_browser()
+        self.__web_driver = self.__start_driver()
+        if self.__headful:
+            self.__web_driver.maximize_window()
+        else:
+            self.__web_driver.set_window_size(1366, 768)
+        self.__web_driver.set_page_load_timeout(1800000)
 
         # Login if login_username was provided
-        if self.__login_username is not None:
-            login_password = getpass.getpass(prompt='Enter your password: ')
+        if self.__login_username:
+            login_password = getpass.getpass(prompt='enter your password: ')
             if self.__login(login_password):
                 self.__is_logged_in = True
-                print('Login success.')
-                answer = helper.yes_or_no('Would you like to download stories?')
+                print('login success')
+                answer = helper.yes_or_no('would you like to download stories?')
                 if answer:
                     self.__download_stories = True
             else:
-                print('Login failed.')
+                print('login failed')
                 self.stop()
 
     def __check_ip_restriction(self):
         # Check if the official Instagram profile can be seen
         # If not, then Instagram has temporarily restricted the ip address (login required to view profiles)
-        if self.__get_id_by_username('instagram') is None:
+        if get_data.get_id_by_username_from_ig('instagram') is None:
             print(self.__c_fore.RED +
-                  'Unable to load profiles at this time (IP temporarily restricted by Instagram).' +
+                  'unable to load profiles at this time (IP temporarily restricted by Instagram)' +
                   self.__c_style.RESET_ALL)
-            print(self.__c_fore.RED + 'Try logging in.' + self.__c_style.RESET_ALL)
+            print(self.__c_fore.RED + 'try logging in' + self.__c_style.RESET_ALL)
             self.stop()
 
     def init_scrape_users(self, users):
@@ -81,17 +87,14 @@ class Scraper:
             if not self.__is_logged_in:
                 self.__check_ip_restriction()
 
-            if x == 0:
-                sys.stdout.write('\n')
-            print('\033[1m' + 'Username: ' + user.username + '\033[0;0m')
+            sys.stdout.write('\n')
+            print('\033[1m' + 'username: ' + user.username + '\033[0;0m')
 
             user.create_user_output_directories()
-            self.__post_save_success_count = 0
 
-            userid = self.__get_id_by_username(user.username)
+            userid = get_data.get_id_by_username_from_ig(user.username)
             if userid is None:
-                print(self.__c_fore.RED + 'Could not find the profile.' +
-                      self.__c_style.RESET_ALL)
+                print(self.__c_fore.RED + 'username not found' + self.__c_style.RESET_ALL)
                 continue
 
             self.__scrape_user_dp(user)
@@ -102,20 +105,18 @@ class Scraper:
             if self.__is_logged_in and self.__download_stories:
                 stories_count = self.__count_user_stories(user)
                 if stories_count > 0:
-                    print('Downloading stories: ')
+                    print('downloading stories: ')
                     self.__scrape_user_stories(user, stories_count)
 
             # Check if posts are visible
             if not self.__profile_has_posts(user):
                 if self.__is_account_private(user):
-                    print(self.__c_fore.RED + 'Account is private.' + self.__c_style.RESET_ALL)
+                    print(self.__c_fore.RED + 'account is private' + self.__c_style.RESET_ALL)
                 else:
-                    print(self.__c_fore.RED + 'No posts found.' + self.__c_style.RESET_ALL)
-
-                sys.stdout.write('\n')
+                    print(self.__c_fore.RED + 'no posts found' + self.__c_style.RESET_ALL)
                 continue
 
-            print('Retrieving post links from profile, please wait... ')
+            print('retrieving post links from profile, please wait... ')
             user.post_links = self.__scroll_down_and_grab_post_links(user.profile_link)
 
             # Check if the post link is already in the database, if yes then skip it
@@ -127,25 +128,16 @@ class Scraper:
             user.post_links = filtered_post_links
 
             if len(user.post_links) <= 0:
-                print('No new posts to download.')
+                print('no new posts to download')
             else:
                 print(self.__c_fore.GREEN + str(len(user.post_links)) +
                       ' post(s) will be downloaded: ' + self.__c_style.RESET_ALL)
 
                 progress_bar = ProgressBar(len(user.post_links), show_count=True)
                 for link in user.post_links:
-                    if self.__prepare_to_scrape_page(link, user.output_user_posts_path, userid):
-                        progress_bar.update(1)
+                    self.__start_scrape_post_page(link, user.output_user_posts_path, userid)
+                    progress_bar.update(1)
                 progress_bar.close()
-
-                if self.__post_save_success_count == len(user.post_links):
-                    print('All posts downloaded.')
-                else:
-                    print(
-                        self.__c_fore.RED + 'Not all posts have been saved. For more information check the log file.' +
-                        self.__c_style.RESET_ALL)
-
-            sys.stdout.write('\n')
 
     def init_scrape_tags(self, tags, tag_type):
         """ Start function for scraping tags """
@@ -157,10 +149,11 @@ class Scraper:
             if not self.__is_logged_in:
                 self.__check_ip_restriction()
 
-            print('\033[1m' + 'Tag: #' + tag.tagname + '\033[0;0m')
+            sys.stdout.write('\n')
+            print('\033[1m' + 'tag: #' + tag.tagname + '\033[0;0m')
 
             tag.create_tag_output_directories()
-            self.__post_save_success_count = 0
+
             link = 'https://www.instagram.com/explore/tags/' + tag.tagname + '/'
             self.__database.insert_tag(tag.tagname)
 
@@ -169,61 +162,59 @@ class Scraper:
             elif tag_type == constants.TAG_TYPE_RECENT:
                 self.__scrape_recent_tags(link, tag)
 
-        sys.stdout.write('\n')
-
-    def __start_browser(self):
+    def __start_driver(self):
         """ Start the browser session """
 
-        if self.__browser_driver is None:
+        driver_options = ChromeOptions()
+        driver_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        driver_options.headless = not self.__headful
 
-            if self.__webdriver_interface == constants.CHROMEDRIVER:
-                driver_options = ChromeOptions()
-                driver_options.add_experimental_option('excludeSwitches', ['enable-logging'])
-                driver_options.headless = not self.__headful
+        webdriver_path = None
+        if platform.system() == 'Windows':
+            for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
+                for file in files:
+                    if file.lower() == constants.CHROMEDRIVER.lower() + '.exe':
+                        webdriver_path = constants.WEBDRIVER_DIR + '/' + file
+                        break
+        elif platform.system() == 'Linux':
+            for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
+                for file in files:
+                    if file.lower() == constants.CHROMEDRIVER.lower():
+                        webdriver_path = constants.WEBDRIVER_DIR + '/' + file
+                        break
+        elif platform.system() == 'Darwin':
+            for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
+                for file in files:
+                    if file.lower() == constants.CHROMEDRIVER.lower():
+                        webdriver_path = constants.WEBDRIVER_DIR + '/' + file
+                        break
+        else:
+            print(self.__c_fore.RED + 'webdriver for google chrome not found' + self.__c_style.RESET_ALL)
+            self.stop()
 
-                webdriver_path = None
-                for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
-                    for file in files:
-                        if file[:len(constants.CHROMEDRIVER)].lower() == constants.CHROMEDRIVER.lower():
-                            webdriver_path = constants.WEBDRIVER_DIR + '/' + file
-                            break
-                    else:
-                        print(self.__c_fore.RED + 'Webdriver for Google Chrome not found.' + self.__c_style.RESET_ALL)
-                        self.stop()
-
-                try:
-                    self.__browser_driver = webdriver.Chrome(
-                        executable_path=webdriver_path,
-                        service_log_path=os.devnull, options=driver_options)
-                except SessionNotCreatedException as err:
-                    logger.error(err)
-                    print('Could not start session, make sure you have the latest Chrome version installed.')
-                    self.stop()
-                except WebDriverException as err:
-                    logger.error(err)
-                    print('Could not launch Google Chrome: ')
-                    print(' Make sure Google Chrome is installed on your machine and is up to date.')
-                    self.stop()
-
-                if self.__headful:
-                    self.__browser_driver.maximize_window()
-                else:
-                    self.__browser_driver.set_window_size(1366, 768)
-                self.__browser_driver.set_page_load_timeout(WEBDRIVER_TIMEOUT)
-
-            else:
-                print(self.__c_fore.RED + 'No webdriver provided.' + self.__c_style.RESET_ALL)
-                self.stop()
+        try:
+            return webdriver.Chrome(
+                executable_path=webdriver_path,
+                service_log_path=os.devnull, options=driver_options)
+        except SessionNotCreatedException as err:
+            logger.error(err)
+            print('could not start session, make sure you have the latest Chrome version installed')
+            self.stop()
+        except WebDriverException as err:
+            logger.error(err)
+            print('could not launch Google Chrome: ')
+            print('make sure Google Chrome is installed on your machine and is up to date')
+            self.stop()
 
     def __go_to_link(self, link, force=False):
         """ Go to a given link """
 
         if self.__page_load_tries > 15:
-            logger.error('Page load timeout.')
-            print('\nPage load timeout.')
+            logger.error('page load timeout')
+            print('\npage load timeout')
             self.stop()
 
-        current_link = self.__browser_driver.current_url
+        current_link = self.__web_driver.current_url
         current_link = current_link.strip('/')
         link = link.strip('/')
 
@@ -232,31 +223,34 @@ class Scraper:
                 return
 
         try:
-            self.__browser_driver.get(link)
+            self.__web_driver.get(link)
 
-            WebDriverWait(self.__browser_driver, 10).until(
+            WebDriverWait(self.__web_driver, 10).until(
                 lambda d: d.execute_script('return document.readyState') == 'complete')
 
             try:
-                self.__browser_driver.find_element_by_id(constants.CHROME_RELOAD_BUTTON_ID)
+                self.__web_driver.find_element_by_id(constants.CHROME_RELOAD_BUTTON_ID)
                 self.__page_load_tries += 1
-                logger.warning('Could not load page.')
+                logger.warning('could not load page')
                 self.__go_to_link(link)
             except (NoSuchElementException, StaleElementReferenceException):
                 pass
             try:
-                self.__browser_driver.find_element_by_id(constants.SORRY_ID)
+                self.__web_driver.find_element_by_id(constants.SORRY_ID)
                 self.__page_load_tries += 1
-                logger.warning('Facebook error.')
+                logger.warning('facebook error')
                 self.__go_to_link(link)
             except (NoSuchElementException, StaleElementReferenceException):
                 pass
 
         except (TimeoutException, WebDriverException) as err:
             logger.error(err)
-            logger.error('Page load timeout.')
-            print('\nPage load timeout.')
+            logger.error('page load timeout')
+            print('\npage load timeout')
             self.stop()
+
+        if not self.__cookies_accepted:
+            self.__accept_cookies()
 
         self.__page_load_tries = 0
 
@@ -265,31 +259,19 @@ class Scraper:
 
         if self.__is_logged_in:
             if not self.__logout():
-                print('Logout failed.')
-
-        if self.__browser_driver is not None:
-            self.__browser_driver.quit()
-
-        self.__database.close_connection()
-
-        sys.exit(0)
-
-    def __get_id_by_username(self, username):
-        """ Return the user id """
-
-        url = 'https://www.instagram.com/{}/?__a=1'
-        self.__go_to_link(url.format(username))
+                print('logout failed')
 
         try:
-            data = json.loads(self.__browser_driver.find_element_by_tag_name('body').text)
-            user_id = data['graphql']['user']['id']
-            return user_id
-        except JSONDecodeError as err:
-            logger.error('Could not retrieve user id -> JSONDecodeError: %s', str(err))
+            self.__web_driver.quit()
+        except AttributeError as err:
+            logger.error(err)
+
+        self.__database.close_connection()
+        sys.exit(0)
 
     def __scroll_down_and_grab_post_links(self, link, xpath=None):
         """
-        Scroll all the way to to the bottom of the page
+        Scroll all the way down to the bottom of the page
         When xpath is given, only links inside the xpath will be retrieved
         """
 
@@ -309,7 +291,7 @@ class Scraper:
                 # Grab post links inside the xpath only
                 if xpath:
                     try:
-                        element_box = self.__browser_driver.find_element_by_xpath(xpath)
+                        element_box = self.__web_driver.find_element_by_xpath(xpath)
                         posts_element = element_box.find_elements_by_css_selector(constants.POSTS_CSS + ' [href]')
                         links += [post_element.get_attribute('href') for post_element in posts_element]
                     except (NoSuchElementException, StaleElementReferenceException) as err:
@@ -319,7 +301,7 @@ class Scraper:
                 # Grab all post links
                 else:
                     try:
-                        elements = self.__browser_driver.find_elements_by_css_selector(constants.POSTS_CSS + ' [href]')
+                        elements = self.__web_driver.find_elements_by_css_selector(constants.POSTS_CSS + ' [href]')
                     except (NoSuchElementException, StaleElementReferenceException) as err:
                         logger.error(err)
                         return []
@@ -339,17 +321,17 @@ class Scraper:
 
             # Remove any duplicates and return the list if maximum was reached
             post_links = sorted(set(post_links), key=lambda index: post_links.index(index))
-            if len(post_links) >= self.__maximum_download:
-                self.__browser_driver.maximize_window()
-                return post_links[:self.__maximum_download]
+            if len(post_links) >= self.__max_download:
+                self.__web_driver.maximize_window()
+                return post_links[:self.__max_download]
 
             # Scroll down to bottom
-            self.__browser_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            self.__web_driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
             time.sleep(0.5)
 
             # If instagram asks to show more posts, click it
             try:
-                element = self.__browser_driver.find_element_by_css_selector(constants.SHOW_MORE_POSTS_CSS)
+                element = self.__web_driver.find_element_by_css_selector(constants.SHOW_MORE_POSTS_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 # No show more posts button found, do nothing
                 pass
@@ -357,15 +339,15 @@ class Scraper:
                 element.click()
 
             try:
-                self.__browser_driver.find_element_by_css_selector(constants.SCROLL_LOAD_CSS)
+                self.__web_driver.find_element_by_css_selector(constants.SCROLL_LOAD_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 # Reached the end, grab links for the last time, remove any duplicates and return the list
                 post_links += grab_links()
-                self.__browser_driver.maximize_window()
-                return sorted(set(post_links), key=lambda index: post_links.index(index))[:self.__maximum_download]
+                self.__web_driver.maximize_window()
+                return sorted(set(post_links), key=lambda index: post_links.index(index))[:self.__max_download]
             else:
                 # Change the browser height to prevent randomly being stuck while scrolling down
-                height = self.__browser_driver.get_window_size()['height']
+                height = self.__web_driver.get_window_size()['height']
                 if increment_browser_height:
                     height += 25
                     increment_browser_height = False
@@ -373,20 +355,20 @@ class Scraper:
                     height -= 25
                     increment_browser_height = True
 
-                width = self.__browser_driver.get_window_size()['width']
-                self.__browser_driver.set_window_size(width, height)
+                width = self.__web_driver.get_window_size()['width']
+                self.__web_driver.set_window_size(width, height)
 
     def __scrape_top_tags(self, link, tag):
         """ Find the post links from the top tags """
 
-        print('Retrieving post links from explore, please wait... ')
+        print('retrieving post links from explore, please wait... ')
 
         self.__go_to_link(link)
 
         try:
-            top_tags_box_element = self.__browser_driver.find_element_by_xpath(constants.TOP_TAGS_XPATH)
+            top_tags_box_element = self.__web_driver.find_element_by_xpath(constants.TOP_TAGS_XPATH)
         except (NoSuchElementException, StaleElementReferenceException):
-            print(self.__c_fore.RED + 'No posts found.' + self.__c_style.RESET_ALL)
+            print(self.__c_fore.RED + 'No posts found' + self.__c_style.RESET_ALL)
             return
 
         try:
@@ -401,35 +383,28 @@ class Scraper:
             logger.error(err)
             return
         else:
-            tag.post_links = tag.post_links[:self.__maximum_download]
+            tag.post_links = tag.post_links[:self.__max_download]
 
             print(self.__c_fore.GREEN + str(len(tag.post_links)) + ' top post(s) will be downloaded: ' +
                   self.__c_style.RESET_ALL)
             progress_bar = ProgressBar(len(tag.post_links), show_count=True)
             for post_link in tag.post_links:
-                if self.__prepare_to_scrape_page(post_link, tag.output_top_tag_path):
-                    self.__database.insert_tag_post(post_link, tag.tagname, in_top=True)
-                    progress_bar.update(1)
+                self.__start_scrape_post_page(post_link, tag.output_top_tag_path)
+                self.__database.insert_tag_post(post_link, tag.tagname, in_top=True)
+                progress_bar.update(1)
             progress_bar.close()
-
-        if self.__post_save_success_count == len(tag.post_links):
-            print('All posts downloaded.')
-        else:
-            print(
-                self.__c_fore.RED + 'Not all posts have been saved. For more information check the log file.' +
-                self.__c_style.RESET_ALL)
 
     def __scrape_recent_tags(self, link, tag):
         """ Find the post links from the recent tags """
 
-        print('Retrieving post links from explore, please wait... ')
+        print('retrieving post links from explore, please wait... ')
 
         self.__go_to_link(link)
 
         tag.post_links = self.__scroll_down_and_grab_post_links(link, constants.RECENT_TAGS_XPATH)
 
         if len(tag.post_links) < 1:
-            print(self.__c_fore.RED + 'No posts found.' + self.__c_style.RESET_ALL)
+            print(self.__c_fore.RED + 'no posts found.' + self.__c_style.RESET_ALL)
             return
 
         print(self.__c_fore.GREEN + str(len(tag.post_links)) +
@@ -437,19 +412,12 @@ class Scraper:
 
         progress_bar = ProgressBar(len(tag.post_links), show_count=True)
         for post_link in tag.post_links:
-            if self.__prepare_to_scrape_page(post_link, tag.output_recent_tag_path):
-                self.__database.insert_tag_post(post_link, tag.tagname, in_recent=True)
-                progress_bar.update(1)
+            self.__start_scrape_post_page(post_link, tag.output_recent_tag_path)
+            self.__database.insert_tag_post(post_link, tag.tagname, in_recent=True)
+            progress_bar.update(1)
         progress_bar.close()
 
-        if self.__post_save_success_count == len(tag.post_links):
-            print('All posts downloaded.')
-        else:
-            print(
-                self.__c_fore.RED + 'Not all posts have been saved. For more information check the log file.' +
-                self.__c_style.RESET_ALL)
-
-    def __prepare_to_scrape_page(self, link, output_path, userid=None):
+    def __start_scrape_post_page(self, link, output_path, userid=None):
         """
         Load the post page and check whether to start scraping for a post with
         single content or multiple content
@@ -459,53 +427,49 @@ class Scraper:
 
         # Check if page is available
         try:
-            self.__browser_driver.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PUBLIC_CSS)
+            self.__web_driver.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PUBLIC_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No "page isn't available" message found, do nothing
             pass
         else:
-            logger.warning('Page not available at %s', link)
+            logger.warning('page not available at %s', link)
             return False
         try:
-            self.__browser_driver.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PRIVATE_CSS)
+            self.__web_driver.find_element_by_css_selector(constants.PAGE_NOT_AVAILABLE_PRIVATE_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No "page isn't available" message found, do nothing29;\hV65_l+yP4h=0lv*3@SH_
             pass
         else:
-            logger.warning('Page not available at %s', link)
+            logger.warning('page not available at %s', link)
             return False
 
         # Try to load post link again if Instagram asks to login
         attempts = 5
         try:
-            self.__browser_driver.find_element_by_css_selector(constants.LOGIN_BOX_CSS)
+            self.__web_driver.find_element_by_css_selector(constants.LOGIN_BOX_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No login box found, do nothing
             pass
         else:
-            logger.warning('Post link %s was redirected to login page.', link)
+            logger.warning('post link %s was redirected to login page', link)
             for _ in range(attempts):
-                if self.__browser_driver.current_url != link:
+                if self.__web_driver.current_url != link:
                     self.__go_to_link(link)
                 else:
                     break
             else:
-                error_msg = 'Post link was redirected to login page ' + str(attempts) + ' times.'
+                error_msg = 'post link was redirected to login page ' + str(attempts) + ' times'
                 logger.error(error_msg)
-                print('\n' + error_msg + '\nProgram stopped.')
+                print('\n' + error_msg + '\nprogram stopped')
                 self.stop()
 
         # Scrape a multiple content post or single content post
         if self.__post_has_multiple_content(link):
-            if self.__scrape_post_multiple_content(link, output_path):
-                self.__database.insert_post(link, True, userid)
-                return True
-        elif not self.__post_has_multiple_content(link):
-            if self.__scrape_post_single_content(link, output_path):
-                self.__database.insert_post(link, False, userid)
-                return True
-
-        return False
+            self.__scrape_post_multiple_content(link, output_path)
+            self.__database.insert_post(link, True, userid)
+        else:
+            self.__scrape_post_single_content(link, output_path)
+            self.__database.insert_post(link, False, userid)
 
     def __scrape_user_dp(self, user):
         """ Download the user display photo """
@@ -514,29 +478,31 @@ class Scraper:
         display_picture_url = None
 
         try:
-            element = self.__browser_driver.find_element_by_css_selector(constants.DISPLAY_PIC_PUBLIC_CSS)
+            element = self.__web_driver.find_element_by_css_selector(constants.DISPLAY_PIC_PUBLIC_CSS)
             display_picture_url = element.get_attribute('src')
         except (NoSuchElementException, StaleElementReferenceException):
             # No display pic found (public profile)
             pass
 
         try:
-            element = self.__browser_driver.find_element_by_css_selector(constants.DISPLAY_PIC_PRIVATE_CSS)
+            element = self.__web_driver.find_element_by_css_selector(constants.DISPLAY_PIC_PRIVATE_CSS)
             display_picture_url = element.get_attribute('src')
         except (NoSuchElementException, StaleElementReferenceException):
             # No display pic found (private profile)
             pass
 
-        if not save_image(display_picture_url, user.output_user_dp_path):
-            logger.error('Could not save display picture for profile at %s', user.profile_link)
-            print(self.__c_fore.RED + 'Could not save display picture.' + self.__c_style.RESET_ALL)
+        try:
+            retriever.download(display_picture_url, output_path=user.output_user_dp_path)
+        except (OSError, RequestException) as err:
+            logger.error(err)
 
     def __post_has_multiple_content(self, link):
         """ Check if post has multiple content """
 
         self.__go_to_link(link)
+
         try:
-            self.__browser_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
+            self.__web_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
             return True
         except (NoSuchElementException, StaleElementReferenceException):
             # Post has no multiple content, do nothing
@@ -548,7 +514,7 @@ class Scraper:
         # Get the published date of the post
         date_time = None
         try:
-            element = self.__browser_driver.find_element_by_css_selector(constants.POST_TIME_CSS)
+            element = self.__web_driver.find_element_by_css_selector(constants.POST_TIME_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
         else:
@@ -556,33 +522,39 @@ class Scraper:
 
         # Get the image
         try:
-            element = self.__browser_driver.find_element_by_css_selector(constants.IMG_CSS)
+            element = self.__web_driver.find_element_by_css_selector(constants.IMG_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # Is not an image, do nothing
             pass
         else:
             img_url = element.get_attribute('src')
-            if save_image(img_url, output_path, date_time=date_time):
-                self.__post_save_success_count += 1
-                return True
-            logger.error('Error downloading post: %s', link)
-            return False
+            file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(img_url)
+
+            try:
+                retriever.download(img_url, output_path, file_name=file_name)
+            except (OSError, RequestException) as err:
+                logger.error(err)
+
+            return True
 
         # Get the video
         try:
-            element = self.__browser_driver.find_element_by_css_selector(constants.VID_CSS)
+            element = self.__web_driver.find_element_by_css_selector(constants.VID_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # Is not a video, do nothing
             pass
         else:
             vid_url = element.get_attribute('src')
-            if save_video(vid_url, output_path, date_time=date_time):
-                self.__post_save_success_count += 1
-                return True
-            logger.error('Error downloading post: %s', link)
-            return False
+            file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(vid_url)
 
-        logger.error('Error downloading post: %s', link)
+            try:
+                retriever.download(vid_url, output_path, file_name=file_name)
+            except (OSError, RequestException) as err:
+                logger.error(err)
+
+            return True
+
+        logger.error('error downloading post: %s', link)
         return False
 
     def __scrape_post_multiple_content(self, link, output_path):
@@ -592,19 +564,17 @@ class Scraper:
             """ Go to the next content in a post with multiple content """
 
             try:
-                next_element = self.__browser_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
+                next_element = self.__web_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
             except (NoSuchElementException, StaleElementReferenceException) as error:
                 logger.error(error)
+                self.stop()
             else:
                 next_element.click()
-                time.sleep(1)
-
-        content_success_count = 0
 
         # Get the published date of the post
         date_time = None
         try:
-            element = self.__browser_driver.find_element_by_css_selector(constants.POST_TIME_CSS)
+            element = self.__web_driver.find_element_by_css_selector(constants.POST_TIME_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
         else:
@@ -612,10 +582,10 @@ class Scraper:
 
         # Get amount of content in the post
         try:
-            elements = self.__browser_driver.find_elements_by_css_selector(constants.INDICATOR)
+            elements = self.__web_driver.find_elements_by_css_selector(constants.INDICATOR)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
-            logger.error('Error downloading post: %s', link)
+            logger.error('error downloading post: %s', link)
             return False
         else:
             post_content_count = len(elements)
@@ -625,7 +595,7 @@ class Scraper:
 
             # Find the ul element that contains the contents
             try:
-                ul_element = self.__browser_driver.find_element_by_css_selector(constants.MULTIPLE_CONTENT_UL_CSS)
+                ul_element = self.__web_driver.find_element_by_css_selector(constants.MULTIPLE_CONTENT_UL_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 return False
 
@@ -662,13 +632,17 @@ class Scraper:
                 pass
             else:
                 img_url = img_element.get_attribute('src')
-                if save_image(img_url, output_path, date_time=date_time, count=i + 1):
-                    content_success_count += 1
-                    if i < post_content_count - 1:
-                        click_next_control()
+                file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(img_url)
+
+                try:
+                    retriever.download(img_url, output_path, file_name=file_name)
+                except (OSError, RequestException) as err:
+                    print('error downloading')
+                    logger.error(err)
+
+                if i < post_content_count - 1:
+                    click_next_control()
                     continue
-                logger.error('Error downloading image at post(' + str(i + 1) + '): %s', link)
-                continue
 
             # Get the video src from the li element
             try:
@@ -678,22 +652,28 @@ class Scraper:
                 pass
             else:
                 vid_url = vid_element.get_attribute('src')
-                if save_video(vid_url, output_path, date_time=date_time, count=i + 1):
-                    content_success_count += 1
-                    if i < post_content_count - 1:
-                        click_next_control()
-                    continue
-                logger.error('Error downloading video at post(' + str(i + 1) + '): %s', link)
+                file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(vid_url)
+
+                try:
+                    retriever.download(vid_url, output_path, file_name=file_name)
+                except (OSError, RequestException) as err:
+                    print('error downloading')
+                    logger.error(err)
+
+                if i < post_content_count - 1:
+                    click_next_control()
                 continue
 
-            logger.error('No image or video downloaded at post(' + str(i + 1) + '): %s', link)
+            logger.error('no image or video downloaded at post(' + str(i + 1) + '): %s', link)
 
-        if content_success_count == post_content_count:
-            self.__post_save_success_count += 1
-            return True
+        logger.error('error downloading post: %s', link)
 
-        logger.error('Error downloading post: %s', link)
-        return False
+    def __get_datetime_str(self, date_time):
+        """ Create a date-time string """
+
+        date = datetime.datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+        date_format = "%Y_%m_%d_%H_%M_%S"
+        return date.strftime(date_format)
 
     def __scrape_user_stories(self, user, stories_count):
         """ Find the src urls of images and videos from stories and save """
@@ -701,10 +681,10 @@ class Scraper:
         self.__go_to_link(user.stories_link)
 
         try:
-            tap_element = self.__browser_driver.find_element_by_css_selector(constants.STORIES_TAP_CSS)
+            tap_element = self.__web_driver.find_element_by_css_selector(constants.STORIES_TAP_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
-            print('Could not download stories, for more information check the log.')
+            print('could not download stories, for more information check the log')
         else:
             tap_element.click()
             time.sleep(1)
@@ -712,20 +692,26 @@ class Scraper:
         success = 0
         progress_bar = ProgressBar(stories_count, show_count=True)
         for i in range(stories_count):
-            next_story_button = self.__browser_driver.find_element_by_css_selector(constants.STORIES_NEXT_CSS)
+            next_story_button = self.__web_driver.find_element_by_css_selector(constants.STORIES_NEXT_CSS)
 
             # Check if the story is a video and download it
             try:
-                vid_elements = self.__browser_driver.find_element_by_css_selector(constants.STORIES_VID_CSS)
+                vid_elements = self.__web_driver.find_element_by_css_selector(constants.STORIES_VID_CSS)
             except (NoSuchElementException, StaleElementReferenceException):
                 # Is not a video, do nothing
                 pass
             else:
                 vid_elements_src = vid_elements.find_elements_by_tag_name('source')
                 vid_url = vid_elements_src[0].get_attribute('src')
-                if save_video(vid_url, user.output_user_stories_path):
-                    success += 1
-                    progress_bar.update(1)
+
+                try:
+                    retriever.download(vid_url, user.output_user_stories_path)
+                except (OSError, RequestException) as err:
+                    logger.error(err)
+                    print('error downloading story')
+
+                success += 1
+                progress_bar.update(1)
 
                 # Go to the next story
                 if i < stories_count - 1:
@@ -735,16 +721,22 @@ class Scraper:
 
             # Check if the story is an image and download it
             try:
-                img_element = self.__browser_driver.find_element_by_css_selector(
+                img_element = self.__web_driver.find_element_by_css_selector(
                     'img[class="' + constants.STORIES_IMG_CSS[1:] + '"]')
             except (NoSuchElementException, StaleElementReferenceException):
                 # Is not an image, do nothing
                 pass
             else:
                 img_url = img_element.get_attribute('src')
-                if save_image(img_url, user.output_user_stories_path):
-                    success += 1
-                    progress_bar.update(1)
+
+                try:
+                    retriever.download(img_url, user.output_user_stories_path)
+                except (OSError, RequestException) as err:
+                    logger.error(err)
+                    print('error downloading story image')
+
+                success += 1
+                progress_bar.update(1)
 
                 # Go to the next story
                 if i < stories_count - 1:
@@ -752,14 +744,14 @@ class Scraper:
                     time.sleep(1)
                 continue
 
-            logger.error('A story could not be downloaded from %s', user.username)
+            logger.error('a story could not be downloaded from %s', user.username)
 
         progress_bar.close()
 
         if success == stories_count:
-            print('All stories downloaded.')
+            print('all stories downloaded')
         else:
-            print('Not all stories have been downloaded')
+            print('not all stories have been downloaded')
 
     def __count_user_stories(self, user):
         """ Count amount of stories """
@@ -767,7 +759,7 @@ class Scraper:
         self.__go_to_link(user.stories_link)
         time.sleep(2)
         try:
-            stories_bar = self.__browser_driver.find_elements_by_css_selector(constants.STORIES_BAR_CSS)
+            stories_bar = self.__web_driver.find_elements_by_css_selector(constants.STORIES_BAR_CSS)
             return len(stories_bar)
         except (NoSuchElementException, StaleElementReferenceException):
             pass
@@ -778,7 +770,7 @@ class Scraper:
 
         self.__go_to_link(user.profile_link)
         try:
-            self.__browser_driver.find_element_by_css_selector(constants.USER_PRIVATE_CSS)
+            self.__web_driver.find_element_by_css_selector(constants.USER_PRIVATE_CSS)
             return True
         except (NoSuchElementException, StaleElementReferenceException):
             return False
@@ -788,7 +780,7 @@ class Scraper:
 
         self.__go_to_link(user.profile_link)
         try:
-            self.__browser_driver.find_element_by_css_selector(constants.POSTS_CSS)
+            self.__web_driver.find_element_by_css_selector(constants.POSTS_CSS)
             return True
         except (NoSuchElementException, StaleElementReferenceException):
             return False
@@ -801,7 +793,7 @@ class Scraper:
 
         # Get the credential element
         try:
-            credential_elements = self.__browser_driver.find_elements_by_css_selector(constants.CREDENTIALS_CSS)
+            credential_elements = self.__web_driver.find_elements_by_css_selector(constants.CREDENTIALS_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
@@ -828,7 +820,7 @@ class Scraper:
 
         # Click login button
         try:
-            button_element = self.__browser_driver.find_element_by_css_selector(constants.LOGIN_BUTTON_CSS)
+            button_element = self.__web_driver.find_element_by_css_selector(constants.LOGIN_BUTTON_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
@@ -838,16 +830,16 @@ class Scraper:
 
         # Enter security code if asked for
         try:
-            security_input_box = self.__browser_driver.find_element_by_css_selector(constants.SECURITY_INPUT_BOX_CSS)
+            security_input_box = self.__web_driver.find_element_by_css_selector(constants.SECURITY_INPUT_BOX_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             pass
         else:
             security_input_box.click()
             time.sleep(2)
             try:
-                security_code = getpass.getpass(prompt='Enter security code: ')
+                security_code = getpass.getpass(prompt='enter security code: ')
                 security_input_box.send_keys(security_code)
-                security_button_element = self.__browser_driver.find_element_by_css_selector(
+                security_button_element = self.__web_driver.find_element_by_css_selector(
                     constants.SECURITY_BOX_BUTTON)
             except (NoSuchElementException, StaleElementReferenceException) as err:
                 logger.info(err)
@@ -858,7 +850,7 @@ class Scraper:
 
         # Click no if asked to save login info
         try:
-            not_save_login_button = self.__browser_driver.find_element_by_css_selector(
+            not_save_login_button = self.__web_driver.find_element_by_css_selector(
                 constants.NOT_SAVE_LOGIN_INFO_BUTTON_CSS)
         except(NoSuchElementException, StaleElementReferenceException):
             # User was not asked to save login info, do nothing
@@ -869,7 +861,7 @@ class Scraper:
 
         # Check for failed login message
         try:
-            self.__browser_driver.find_element_by_css_selector(constants.FAILED_LOGIN_MESSAGE_CSS)
+            self.__web_driver.find_element_by_css_selector(constants.FAILED_LOGIN_MESSAGE_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No failed login message found, do nothing
             pass
@@ -878,7 +870,7 @@ class Scraper:
 
         # Check if Instagram shows popup asking to turn on notifications
         try:
-            no_notifications_element = self.__browser_driver.find_element_by_css_selector(
+            no_notifications_element = self.__web_driver.find_element_by_css_selector(
                 constants.NO_NOTIFICATIONS_BUTTON_CSS)
         except (NoSuchElementException, StaleElementReferenceException):
             # No popup found, do nothing
@@ -895,7 +887,7 @@ class Scraper:
 
         # Click settings
         try:
-            settings_button_element = self.__browser_driver.find_element_by_css_selector(constants.SETTINGS_CSS)
+            settings_button_element = self.__web_driver.find_element_by_css_selector(constants.SETTINGS_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
@@ -905,7 +897,7 @@ class Scraper:
 
         # Get settings buttons elements
         try:
-            settings_list_elements = self.__browser_driver.find_elements_by_css_selector(constants.SETTINGS_BUTTONS_CSS)
+            settings_list_elements = self.__web_driver.find_elements_by_css_selector(constants.SETTINGS_BUTTONS_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             return False
@@ -921,3 +913,14 @@ class Scraper:
             time.sleep(2)
             self.__is_logged_in = False
             return True
+
+    def __accept_cookies(self):
+        """ Accept cookies """
+
+        try:
+            accept_cookies_button_element = self.__web_driver.find_element_by_css_selector(constants.ACCEPT_COOKIES_CSS)
+        except (NoSuchElementException, StaleElementReferenceException):
+            pass
+        else:
+            accept_cookies_button_element.click()
+            self.__cookies_accepted = True

@@ -4,14 +4,9 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pytest = "*"
 
 [packages]
-colorama = "*"
-requests = "*"
-selenium = "*"
-urllib3 = "*"
-wget = "*"
-simplejson = "*"
 
 [requires]
 python_version = "3.8"
