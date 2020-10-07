@@ -10,12 +10,12 @@ from instagram_scraper import constants
 from instagram_scraper.scraper import Scraper
 from instagram_scraper.user import User
 from instagram_scraper.tag import Tag
-from instagram_scraper.database import Database
-from instagram_scraper import req_userinfo
-from instagram_scraper.version import __version__
+from instagram_scraper import __version__
 from instagram_scraper import helper
 from instagram_scraper import webdriver
-from instagram_scraper import remover
+from instagram_scraper import remove_data
+from instagram_scraper import update_data
+from instagram_scraper import get_data
 from instagram_scraper import arguments
 
 
@@ -60,16 +60,32 @@ class App:
             arguments.print_help()
             sys.exit(0)
 
+        ########
+        # HELP #
+        ########
         self.__args_help = self.__args.help
         if self.__arg_passed(self.__args_help):
             arguments.print_help()
             sys.exit(0)
 
+        ########
+        # LOG #
+        ########
+        self.__args_log = self.__args.log
+        if self.__arg_passed(self.__args_log):
+            open(constants.LOG_FILE, 'a').close()
+
+        ###########
+        # VERSION #
+        ###########
         self.__args_version = self.__args.version
         if self.__arg_passed(self.__args_version):
             print('v' + __version__)
             sys.exit(0)
 
+        ##############
+        # LIST USERS #
+        ##############
         self.__args_list_users = self.__args.list_users
         if self.__arg_passed(self.__args_list_users):
             if self.__is_db_present():
@@ -79,6 +95,9 @@ class App:
                 print(self.__message_no_db_found)
                 sys.exit(0)
 
+        #############
+        # LIST TAGS #
+        #############
         self.__args_list_tags = self.__args.list_tags
         if self.__arg_passed(self.__args_list_tags):
             if self.__is_db_present():
@@ -88,52 +107,73 @@ class App:
                 print(self.__message_no_db_found)
                 sys.exit(0)
 
+        ################
+        # REMOVE USERS #
+        ################
         self.__args_remove_users = self.__args.remove_users
         if self.__arg_passed(self.__args_remove_users):
             if self.__is_db_present():
-                remover.remove_users_by_username(self.__args.remove_users)
+                remove_data.remove_users_by_username(self.__args.remove_users)
                 sys.exit(0)
             else:
                 print(self.__message_no_db_found)
                 sys.exit(0)
 
+        ###############
+        # REMOVE TAGS #
+        ###############
         self.__args_remove_tags = self.__args.remove_tags
         if self.__arg_passed(self.__args_remove_tags):
             if self.__is_db_present():
-                remover.remove_tags_by_tagname(self.__args_remove_tags)
+                remove_data.remove_tags_by_tagname(self.__args_remove_tags)
                 sys.exit(0)
             else:
                 print(self.__message_no_db_found)
                 sys.exit(0)
 
+        #########################
+        # REMOVE TAGS BY NUMBER #
+        #########################
         self.__args_remove_tags_n = self.__args.remove_tags_n
         if self.__arg_passed(self.__args_remove_tags_n):
             if self.__is_db_present():
-                remover.remove_tags_by_number(self.__get_tagnames_dict(), self.__args_remove_tags_n)
+                remove_data.remove_tags_by_number(get_data.get_tagnames_dict(), self.__args_remove_tags_n)
                 sys.exit(0)
             else:
                 print(self.__message_no_db_found)
                 sys.exit(0)
 
+        ##########################
+        # REMOVE USERS BY NUMBER #
+        ##########################
         self.__args_remove_users_n = self.__args.remove_users_n
         if self.__arg_passed(self.__args_remove_users_n):
             if self.__is_db_present():
-                remover.remove_users_by_number(self.__get_usernames_dict(), self.__args_remove_users_n)
+                remove_data.remove_users_by_number(get_data.get_usernames_dict(), self.__args_remove_users_n)
                 sys.exit(0)
             else:
                 print(self.__message_no_db_found)
                 sys.exit(0)
 
+        ####################
+        # REMOVE ALL USERS #
+        ####################
         self.__args_remove_all_users = self.__args.remove_all_users
         if self.__arg_passed(self.__args_remove_all_users):
-            remover.remove_all_users()
+            remove_data.remove_all_users()
             sys.exit(0)
 
+        ###################
+        # REMOVE ALL TAGS #
+        ###################
         self.__args_remove_all_tags = self.__args.remove_all_tags
         if self.__arg_passed(self.__args_remove_all_tags):
-            remover.remove_all_tags()
+            remove_data.remove_all_tags()
             sys.exit(0)
 
+        #######
+        # MAX #
+        #######
         self.__args_max = self.__args.max
         if self.__arg_passed(self.__args_max):
             try:
@@ -147,12 +187,18 @@ class App:
         else:
             max_download = 1000000000
 
+        ###########
+        # HEADFUL #
+        ###########
         self.__args_headful = self.__args.headful
         if self.__arg_passed(self.__args_headful):
             headful = True
         else:
             headful = False
 
+        ############
+        # TOP TAGS #
+        ############
         self.__top_tags = []
         self.__args_top_tags = self.__args.top_tags
         if self.__arg_passed(self.__args_top_tags):
@@ -162,6 +208,9 @@ class App:
                 print(self.__message_must_provide_tag)
                 sys.exit(0)
 
+        ###############
+        # RECENT TAGS #
+        ###############
         self.__recent_tags = []
         self.__args_recent_tags = self.__args.recent_tags
         if self.__arg_passed(self.__args_recent_tags):
@@ -171,17 +220,11 @@ class App:
                 print(self.__message_must_provide_tag)
                 sys.exit(0)
 
-        if not webdriver.chromedriver_present():
-            if helper.yes_or_no('would you like to download chromedriver now?'):
-                webdriver.download_chromedriver()
-            else:
-                print('manually download the correct chromedriver for your current installed'
-                      + ' chrome web browser and place the file in working-directory/'
-                      + constants.WEBDRIVER_DIR)
-                sys.exit(0)
-
         print('starting...')
 
+        #########
+        # USERS #
+        #########
         self.__users = []
         self.__args_users = self.__args.users
         if self.__arg_passed(self.__args_users):
@@ -189,10 +232,13 @@ class App:
                 usernames_to_scrape = sorted(set(self.__args_users), key=lambda index: self.__args_users.index(index))
                 self.__users = self.__create_user_objects(usernames_to_scrape)
 
+        ################
+        # UPDATE USERS #
+        ################
         self.__args_update_users = self.__args.update_users
         if self.__arg_passed(self.__args_update_users):
             if self.__is_db_present():
-                usernames_to_scrape = self.__get_all_usernames()
+                usernames_to_scrape = get_data.get_all_usernames()
                 if len(usernames_to_scrape) == 0:
                     print('database has no users to update.')
                     sys.exit(0)
@@ -201,6 +247,9 @@ class App:
                 print(self.__message_no_db_found)
                 sys.exit(0)
 
+        ##################
+        # LOGIN USERNAME #
+        ##################
         self.__args_login_username = self.__args.login_username
         if self.__arg_passed(self.__args_login_username):
             login_username = self.__args_login_username[0]
@@ -210,6 +259,16 @@ class App:
         if len(self.__users) == 0 and len(self.__top_tags) == 0 and len(self.__recent_tags) == 0:
             print('provide at least one username or tag to scrape.')
             sys.exit(0)
+
+        if not webdriver.chromedriver_present():
+            if helper.yes_or_no('would you like to download chromedriver now?'):
+                webdriver.download_chromedriver()
+                print('Download completed.')
+            else:
+                print('manually download the correct chromedriver for your current installed'
+                      + ' chrome web browser and place the file in working-directory/'
+                      + constants.WEBDRIVER_DIR)
+                sys.exit(0)
 
         self.__scraper = Scraper(headful, max_download, login_username)
 
@@ -265,51 +324,23 @@ class App:
             tags.append(tag)
         return tags
 
-    def __get_all_usernames(self):
-        """ Retrieve all usernames from database """
-
-        database = Database()
-        usernames = []
-        db_usernames = database.retrieve_all_usernames()
-        if len(db_usernames) > 0:
-            for user in db_usernames:
-                usernames.append(user)
-        database.close_connection()
-        return usernames
-
-    def __get_all_tagnames(self):
-        """ Retrieve all tags from database """
-
-        database = Database()
-        tags = []
-        db_tags = database.retrieve_all_tags()
-        if len(db_tags) > 0:
-            for tag in db_tags:
-                tags.append(tag)
-
-        database.close_connection()
-        return tags
-
     def __check_if_username_has_changed(self, input_username):
-        """ If user has a new username, then update it in the database and rename the user dir """
+        """ If user has a new username, update it in the database and rename the user dir """
 
-        database = Database()
-        user_id = database.get_id_by_username(input_username)
+        user_id = get_data.get_id_by_username_from_db(input_username)
         if user_id:
-            ig_username = req_userinfo.get_username_by_id(user_id)
-            if ig_username:
-                if input_username != ig_username:
-                    database.rename_user(user_id, ig_username)
-                    helper.rename_dir(input_username, ig_username)
-                    return ig_username
-        database.close_connection()
+            username = get_data.get_username_by_id(user_id)
+            if username:
+                if input_username != username:
+                    update_data.rename_user(user_id, username)
+                    helper.rename_user_dir(input_username, username)
+                    return username
         return input_username
 
     def __list_all_users(self):
         """ List all users in the database """
 
-        database = Database()
-        usernames_dict = self.__get_usernames_dict()
+        usernames_dict = get_data.get_usernames_dict()
         if len(usernames_dict) > 0:
             first_str = 'user'
             second_str = 'posts scraped'
@@ -320,17 +351,15 @@ class App:
             for number, username in usernames_dict.items():
                 space_str = ' ' if len(str(number)) > 1 else '  '
                 first = '[' + space_str + str(number) + '] ' + username
-                second = str(database.get_user_post_count(username))
+                second = str(get_data.get_user_post_count(username))
                 print(descriptor.format(first, second))
         else:
             print('no users found in the database.')
-        database.close_connection()
 
     def __list_all_tags(self):
         """ List all tags in the database """
 
-        database = Database()
-        tags_dict = self.__get_tagnames_dict()
+        tags_dict = get_data.get_tagnames_dict()
         if len(tags_dict) > 0:
             first_str = 'tag'
             second_str = 'top posts scraped'
@@ -343,26 +372,11 @@ class App:
             for number, tag in tags_dict.items():
                 space_str = ' ' if len(str(number)) > 1 else '  '
                 first = '[' + space_str + str(number) + '] ' + tag
-                second = str(database.get_top_tag_post_count(tag))
-                third = str(database.get_recent_tag_post_count(tag))
+                second = str(get_data.get_top_tag_post_count(tag))
+                third = str(get_data.get_recent_tag_post_count(tag))
                 print(descriptor.format(first, second, third))
         else:
             print('no tags found in the database.')
-        database.close_connection()
-
-    def __get_usernames_dict(self):
-        """ Returns a dictionary with usernames, key starts at 1 """
-
-        usernames_list = self.__get_all_usernames()
-        usernames_dict = {v + 1: k for v, k in enumerate(usernames_list)}
-        return usernames_dict
-
-    def __get_tagnames_dict(self):
-        """ Returns a dictionary with tags, key starts at 1 """
-
-        tagnames_list = self.__get_all_tagnames()
-        tags_dict = {v + 1: k for v, k in enumerate(tagnames_list)}
-        return tags_dict
 
 
 if __name__ == "__main__":

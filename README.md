@@ -124,5 +124,7 @@ view any posts without being logged in.*
 
 --remove-all-tags       Remove all tags.
 
+--log                   Create log file.
+
 --version               Program version.
 ```

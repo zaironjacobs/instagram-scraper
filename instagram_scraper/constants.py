@@ -1,5 +1,6 @@
 INSTAGRAM_URL = 'https://www.instagram.com/'
-INSTAGRAM_USER_INFO_URL = 'https://www.instagram.com/{}/?__a=1'
+INSTAGRAM_USER_INFO_URL_DEFAULT = 'https://www.instagram.com/{}/?__a=1'
+INSTAGRAM_USER_INFO_URL_MOBILE = 'https://i.instagram.com/api/v1/users/{}/info/'
 
 CHROMEDRIVER = 'chromedriver'
 
@@ -50,6 +51,7 @@ SETTINGS_CSS = '._8-yf5'
 POSTS_AMOUNT_CSS = '.g47SY '
 POST_TIME_CSS = '._1o9PC.Nzb55'
 SCROLL_LOAD_CSS = '.Igw0E.IwRSH.YBx95._4EzTm._9qQ0O.ZUqME'
+ACCEPT_COOKIES_CSS = '.aOOlW.bIiDR'
 CHROME_RELOAD_BUTTON_ID = 'reload-button'
 SORRY_ID = 'sorry'
 

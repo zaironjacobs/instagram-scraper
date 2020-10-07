@@ -87,6 +87,18 @@ def rename_dir(old_directory_name, new_directory_name):
     """ Rename a directory """
 
     try:
+        os.rename(old_directory_name, new_directory_name)
+    except OSError as err:
+        logger.error(err)
+        return False
+    else:
+        return True
+
+
+def rename_user_dir(old_directory_name, new_directory_name):
+    """ Rename user directory """
+
+    try:
         os.rename(constants.USERS_DIR + '/' + old_directory_name, constants.USERS_DIR + '/' + new_directory_name)
     except OSError as err:
         logger.error(err)

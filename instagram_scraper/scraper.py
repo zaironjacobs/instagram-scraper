@@ -3,11 +3,9 @@ import sys
 import time
 import getpass
 import logging
-import json
 import datetime
 import platform
 
-from json.decoder import JSONDecodeError
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.common.exceptions import NoSuchElementException
@@ -17,6 +15,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import SessionNotCreatedException
 from selenium.webdriver.support.wait import WebDriverWait
+from requests.exceptions import RequestException
 import colorama
 
 from instagram_scraper.database import Database
@@ -24,8 +23,7 @@ from instagram_scraper import constants
 from instagram_scraper.progress_bar import ProgressBar
 from instagram_scraper import helper
 from instagram_scraper import retriever
-
-WEBDRIVER_TIMEOUT = 1800000
+from instagram_scraper import get_data
 
 logger = logging.getLogger('__name__')
 
@@ -40,10 +38,10 @@ class Scraper:
         self.__max_download = max_download
         self.__login_username = login_username
 
-        self.__post_save_success_count = 0
         self.__is_logged_in = False
         self.__download_stories = False
         self.__page_load_tries = 0
+        self.__cookies_accepted = False
 
         self.__c_fore = colorama.Fore
         self.__c_style = colorama.Style
@@ -54,29 +52,29 @@ class Scraper:
             self.__web_driver.maximize_window()
         else:
             self.__web_driver.set_window_size(1366, 768)
-        self.__web_driver.set_page_load_timeout(WEBDRIVER_TIMEOUT)
+        self.__web_driver.set_page_load_timeout(1800000)
 
         # Login if login_username was provided
-        if self.__login_username is not None:
+        if self.__login_username:
             login_password = getpass.getpass(prompt='enter your password: ')
             if self.__login(login_password):
                 self.__is_logged_in = True
-                print('login success.')
+                print('login success')
                 answer = helper.yes_or_no('would you like to download stories?')
                 if answer:
                     self.__download_stories = True
             else:
-                print('login failed.')
+                print('login failed')
                 self.stop()
 
     def __check_ip_restriction(self):
         # Check if the official Instagram profile can be seen
         # If not, then Instagram has temporarily restricted the ip address (login required to view profiles)
-        if self.__get_id_by_username('instagram') is None:
+        if get_data.get_id_by_username_from_ig('instagram') is None:
             print(self.__c_fore.RED +
-                  'unable to load profiles at this time (IP temporarily restricted by Instagram).' +
+                  'unable to load profiles at this time (IP temporarily restricted by Instagram)' +
                   self.__c_style.RESET_ALL)
-            print(self.__c_fore.RED + 'try logging in.' + self.__c_style.RESET_ALL)
+            print(self.__c_fore.RED + 'try logging in' + self.__c_style.RESET_ALL)
             self.stop()
 
     def init_scrape_users(self, users):
@@ -89,14 +87,12 @@ class Scraper:
             if not self.__is_logged_in:
                 self.__check_ip_restriction()
 
-            if x == 0:
-                sys.stdout.write('\n')
+            sys.stdout.write('\n')
             print('\033[1m' + 'username: ' + user.username + '\033[0;0m')
 
             user.create_user_output_directories()
-            self.__post_save_success_count = 0
 
-            userid = self.__get_id_by_username(user.username)
+            userid = get_data.get_id_by_username_from_ig(user.username)
             if userid is None:
                 print(self.__c_fore.RED + 'username not found' + self.__c_style.RESET_ALL)
                 continue
@@ -115,11 +111,9 @@ class Scraper:
             # Check if posts are visible
             if not self.__profile_has_posts(user):
                 if self.__is_account_private(user):
-                    print(self.__c_fore.RED + 'account is private.' + self.__c_style.RESET_ALL)
+                    print(self.__c_fore.RED + 'account is private' + self.__c_style.RESET_ALL)
                 else:
-                    print(self.__c_fore.RED + 'no posts found.' + self.__c_style.RESET_ALL)
-
-                sys.stdout.write('\n')
+                    print(self.__c_fore.RED + 'no posts found' + self.__c_style.RESET_ALL)
                 continue
 
             print('retrieving post links from profile, please wait... ')
@@ -134,23 +128,16 @@ class Scraper:
             user.post_links = filtered_post_links
 
             if len(user.post_links) <= 0:
-                print('no new posts to download.')
+                print('no new posts to download')
             else:
                 print(self.__c_fore.GREEN + str(len(user.post_links)) +
                       ' post(s) will be downloaded: ' + self.__c_style.RESET_ALL)
 
                 progress_bar = ProgressBar(len(user.post_links), show_count=True)
                 for link in user.post_links:
-                    if self.__prepare_to_scrape_page(link, user.output_user_posts_path, userid):
-                        progress_bar.update(1)
+                    self.__start_scrape_post_page(link, user.output_user_posts_path, userid)
+                    progress_bar.update(1)
                 progress_bar.close()
-
-                if self.__post_save_success_count == len(user.post_links):
-                    print('all posts downloaded.')
-                else:
-                    print(
-                        self.__c_fore.RED + 'not all posts have been saved.' +
-                        self.__c_style.RESET_ALL)
 
     def init_scrape_tags(self, tags, tag_type):
         """ Start function for scraping tags """
@@ -162,10 +149,11 @@ class Scraper:
             if not self.__is_logged_in:
                 self.__check_ip_restriction()
 
-            print('\033[1m' + '\ntag: #' + tag.tagname + '\033[0;0m')
+            sys.stdout.write('\n')
+            print('\033[1m' + 'tag: #' + tag.tagname + '\033[0;0m')
 
             tag.create_tag_output_directories()
-            self.__post_save_success_count = 0
+
             link = 'https://www.instagram.com/explore/tags/' + tag.tagname + '/'
             self.__database.insert_tag(tag.tagname)
 
@@ -201,7 +189,7 @@ class Scraper:
                         webdriver_path = constants.WEBDRIVER_DIR + '/' + file
                         break
         else:
-            print(self.__c_fore.RED + 'webdriver for google chrome not found.' + self.__c_style.RESET_ALL)
+            print(self.__c_fore.RED + 'webdriver for google chrome not found' + self.__c_style.RESET_ALL)
             self.stop()
 
         try:
@@ -210,20 +198,20 @@ class Scraper:
                 service_log_path=os.devnull, options=driver_options)
         except SessionNotCreatedException as err:
             logger.error(err)
-            print('could not start session, make sure you have the latest Chrome version installed.')
+            print('could not start session, make sure you have the latest Chrome version installed')
             self.stop()
         except WebDriverException as err:
             logger.error(err)
             print('could not launch Google Chrome: ')
-            print('make sure Google Chrome is installed on your machine and is up to date.')
+            print('make sure Google Chrome is installed on your machine and is up to date')
             self.stop()
 
     def __go_to_link(self, link, force=False):
         """ Go to a given link """
 
         if self.__page_load_tries > 15:
-            logger.error('page load timeout.')
-            print('\npage load timeout.')
+            logger.error('page load timeout')
+            print('\npage load timeout')
             self.stop()
 
         current_link = self.__web_driver.current_url
@@ -243,23 +231,26 @@ class Scraper:
             try:
                 self.__web_driver.find_element_by_id(constants.CHROME_RELOAD_BUTTON_ID)
                 self.__page_load_tries += 1
-                logger.warning('could not load page.')
+                logger.warning('could not load page')
                 self.__go_to_link(link)
             except (NoSuchElementException, StaleElementReferenceException):
                 pass
             try:
                 self.__web_driver.find_element_by_id(constants.SORRY_ID)
                 self.__page_load_tries += 1
-                logger.warning('facebook error.')
+                logger.warning('facebook error')
                 self.__go_to_link(link)
             except (NoSuchElementException, StaleElementReferenceException):
                 pass
 
         except (TimeoutException, WebDriverException) as err:
             logger.error(err)
-            logger.error('page load timeout.')
-            print('\npage load timeout.')
+            logger.error('page load timeout')
+            print('\npage load timeout')
             self.stop()
+
+        if not self.__cookies_accepted:
+            self.__accept_cookies()
 
         self.__page_load_tries = 0
 
@@ -268,7 +259,7 @@ class Scraper:
 
         if self.__is_logged_in:
             if not self.__logout():
-                print('logout failed.')
+                print('logout failed')
 
         try:
             self.__web_driver.quit()
@@ -277,18 +268,6 @@ class Scraper:
 
         self.__database.close_connection()
         sys.exit(0)
-
-    def __get_id_by_username(self, username):
-        """ Return the user id """
-
-        self.__go_to_link(constants.INSTAGRAM_USER_INFO_URL.format(username))
-
-        try:
-            data = json.loads(self.__web_driver.find_element_by_tag_name('body').text)
-            user_id = data['graphql']['user']['id']
-            return user_id
-        except (JSONDecodeError, KeyError) as err:
-            logger.error('could not retrieve user id: %s', str(err))
 
     def __scroll_down_and_grab_post_links(self, link, xpath=None):
         """
@@ -389,7 +368,7 @@ class Scraper:
         try:
             top_tags_box_element = self.__web_driver.find_element_by_xpath(constants.TOP_TAGS_XPATH)
         except (NoSuchElementException, StaleElementReferenceException):
-            print(self.__c_fore.RED + 'No posts found.' + self.__c_style.RESET_ALL)
+            print(self.__c_fore.RED + 'No posts found' + self.__c_style.RESET_ALL)
             return
 
         try:
@@ -410,17 +389,10 @@ class Scraper:
                   self.__c_style.RESET_ALL)
             progress_bar = ProgressBar(len(tag.post_links), show_count=True)
             for post_link in tag.post_links:
-                if self.__prepare_to_scrape_page(post_link, tag.output_top_tag_path):
-                    self.__database.insert_tag_post(post_link, tag.tagname, in_top=True)
-                    progress_bar.update(1)
+                self.__start_scrape_post_page(post_link, tag.output_top_tag_path)
+                self.__database.insert_tag_post(post_link, tag.tagname, in_top=True)
+                progress_bar.update(1)
             progress_bar.close()
-
-        if self.__post_save_success_count == len(tag.post_links):
-            print('all posts downloaded.')
-        else:
-            print(
-                self.__c_fore.RED + 'not all posts have been saved.' +
-                self.__c_style.RESET_ALL)
 
     def __scrape_recent_tags(self, link, tag):
         """ Find the post links from the recent tags """
@@ -440,19 +412,12 @@ class Scraper:
 
         progress_bar = ProgressBar(len(tag.post_links), show_count=True)
         for post_link in tag.post_links:
-            if self.__prepare_to_scrape_page(post_link, tag.output_recent_tag_path):
-                self.__database.insert_tag_post(post_link, tag.tagname, in_recent=True)
-                progress_bar.update(1)
+            self.__start_scrape_post_page(post_link, tag.output_recent_tag_path)
+            self.__database.insert_tag_post(post_link, tag.tagname, in_recent=True)
+            progress_bar.update(1)
         progress_bar.close()
 
-        if self.__post_save_success_count == len(tag.post_links):
-            print('all posts downloaded.')
-        else:
-            print(
-                self.__c_fore.RED + 'not all posts have been saved.' +
-                self.__c_style.RESET_ALL)
-
-    def __prepare_to_scrape_page(self, link, output_path, userid=None):
+    def __start_scrape_post_page(self, link, output_path, userid=None):
         """
         Load the post page and check whether to start scraping for a post with
         single content or multiple content
@@ -486,29 +451,25 @@ class Scraper:
             # No login box found, do nothing
             pass
         else:
-            logger.warning('post link %s was redirected to login page.', link)
+            logger.warning('post link %s was redirected to login page', link)
             for _ in range(attempts):
                 if self.__web_driver.current_url != link:
                     self.__go_to_link(link)
                 else:
                     break
             else:
-                error_msg = 'post link was redirected to login page ' + str(attempts) + ' times.'
+                error_msg = 'post link was redirected to login page ' + str(attempts) + ' times'
                 logger.error(error_msg)
-                print('\n' + error_msg + '\nprogram stopped.')
+                print('\n' + error_msg + '\nprogram stopped')
                 self.stop()
 
         # Scrape a multiple content post or single content post
         if self.__post_has_multiple_content(link):
-            if self.__scrape_post_multiple_content(link, output_path):
-                self.__database.insert_post(link, True, userid)
-                return True
-        elif not self.__post_has_multiple_content(link):
-            if self.__scrape_post_single_content(link, output_path):
-                self.__database.insert_post(link, False, userid)
-                return True
-
-        return False
+            self.__scrape_post_multiple_content(link, output_path)
+            self.__database.insert_post(link, True, userid)
+        else:
+            self.__scrape_post_single_content(link, output_path)
+            self.__database.insert_post(link, False, userid)
 
     def __scrape_user_dp(self, user):
         """ Download the user display photo """
@@ -530,12 +491,16 @@ class Scraper:
             # No display pic found (private profile)
             pass
 
-        retriever.download(display_picture_url, output_path=user.output_user_dp_path)
+        try:
+            retriever.download(display_picture_url, output_path=user.output_user_dp_path)
+        except (OSError, RequestException) as err:
+            logger.error(err)
 
     def __post_has_multiple_content(self, link):
         """ Check if post has multiple content """
 
         self.__go_to_link(link)
+
         try:
             self.__web_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
             return True
@@ -564,8 +529,12 @@ class Scraper:
         else:
             img_url = element.get_attribute('src')
             file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(img_url)
-            retriever.download(img_url, output_path, file_name=file_name)
-            self.__post_save_success_count += 1
+
+            try:
+                retriever.download(img_url, output_path, file_name=file_name)
+            except (OSError, RequestException) as err:
+                logger.error(err)
+
             return True
 
         # Get the video
@@ -577,8 +546,12 @@ class Scraper:
         else:
             vid_url = element.get_attribute('src')
             file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(vid_url)
-            retriever.download(vid_url, output_path, file_name=file_name)
-            self.__post_save_success_count += 1
+
+            try:
+                retriever.download(vid_url, output_path, file_name=file_name)
+            except (OSError, RequestException) as err:
+                logger.error(err)
+
             return True
 
         logger.error('error downloading post: %s', link)
@@ -594,11 +567,9 @@ class Scraper:
                 next_element = self.__web_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS)
             except (NoSuchElementException, StaleElementReferenceException) as error:
                 logger.error(error)
+                self.stop()
             else:
                 next_element.click()
-                time.sleep(1)
-
-        content_success_count = 0
 
         # Get the published date of the post
         date_time = None
@@ -662,8 +633,13 @@ class Scraper:
             else:
                 img_url = img_element.get_attribute('src')
                 file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(img_url)
-                retriever.download(img_url, output_path, file_name=file_name)
-                content_success_count += 1
+
+                try:
+                    retriever.download(img_url, output_path, file_name=file_name)
+                except (OSError, RequestException) as err:
+                    print('error downloading')
+                    logger.error(err)
+
                 if i < post_content_count - 1:
                     click_next_control()
                     continue
@@ -677,20 +653,20 @@ class Scraper:
             else:
                 vid_url = vid_element.get_attribute('src')
                 file_name = self.__get_datetime_str(date_time) + '-' + retriever.get_file_name_from_url(vid_url)
-                retriever.download(vid_url, output_path, file_name=file_name)
-                content_success_count += 1
+
+                try:
+                    retriever.download(vid_url, output_path, file_name=file_name)
+                except (OSError, RequestException) as err:
+                    print('error downloading')
+                    logger.error(err)
+
                 if i < post_content_count - 1:
                     click_next_control()
                 continue
 
             logger.error('no image or video downloaded at post(' + str(i + 1) + '): %s', link)
 
-        if content_success_count == post_content_count:
-            self.__post_save_success_count += 1
-            return True
-
         logger.error('error downloading post: %s', link)
-        return False
 
     def __get_datetime_str(self, date_time):
         """ Create a date-time string """
@@ -708,7 +684,7 @@ class Scraper:
             tap_element = self.__web_driver.find_element_by_css_selector(constants.STORIES_TAP_CSS)
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
-            print('could not download stories, for more information check the log.')
+            print('could not download stories, for more information check the log')
         else:
             tap_element.click()
             time.sleep(1)
@@ -727,7 +703,13 @@ class Scraper:
             else:
                 vid_elements_src = vid_elements.find_elements_by_tag_name('source')
                 vid_url = vid_elements_src[0].get_attribute('src')
-                retriever.download(vid_url, user.output_user_stories_path)
+
+                try:
+                    retriever.download(vid_url, user.output_user_stories_path)
+                except (OSError, RequestException) as err:
+                    logger.error(err)
+                    print('error downloading story')
+
                 success += 1
                 progress_bar.update(1)
 
@@ -746,7 +728,13 @@ class Scraper:
                 pass
             else:
                 img_url = img_element.get_attribute('src')
-                retriever.download(img_url, user.output_user_stories_path)
+
+                try:
+                    retriever.download(img_url, user.output_user_stories_path)
+                except (OSError, RequestException) as err:
+                    logger.error(err)
+                    print('error downloading story image')
+
                 success += 1
                 progress_bar.update(1)
 
@@ -761,7 +749,7 @@ class Scraper:
         progress_bar.close()
 
         if success == stories_count:
-            print('all stories downloaded.')
+            print('all stories downloaded')
         else:
             print('not all stories have been downloaded')
 
@@ -925,3 +913,14 @@ class Scraper:
             time.sleep(2)
             self.__is_logged_in = False
             return True
+
+    def __accept_cookies(self):
+        """ Accept cookies """
+
+        try:
+            accept_cookies_button_element = self.__web_driver.find_element_by_css_selector(constants.ACCEPT_COOKIES_CSS)
+        except (NoSuchElementException, StaleElementReferenceException):
+            pass
+        else:
+            accept_cookies_button_element.click()
+            self.__cookies_accepted = True

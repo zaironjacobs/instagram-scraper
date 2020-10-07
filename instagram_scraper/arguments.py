@@ -1,5 +1,3 @@
-from instagram_scraper.console_name import __console_name__
-
 descriptor = '  {:<30} {}'
 message_help_required_tagname = descriptor.format('', 'required: provide a tag to scrape')
 message_help_required_login_username = descriptor.format('', 'required: add a login username')
@@ -35,12 +33,13 @@ args_options = [
      + message_help_required_tags_n_to_remove],
     ['--remove-all-tags', 'remove all tags'],
     ['--version', 'program version'],
+    ['--log', 'create log file'],
     ['--help', 'show help']
 ]
 
 
 def print_help():
-    print('usage: ' + __console_name__ + ' [usernames] [options]')
+    print('usage: ' + 'igscraper' + ' [username] [options]')
     print('')
     print('options: ')
     for i, argument in enumerate(args_options):
