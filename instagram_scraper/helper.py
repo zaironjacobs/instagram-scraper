@@ -1,6 +1,7 @@
 import os
 import shutil
 import logging
+import datetime
 
 from instagram_scraper import constants
 
@@ -105,3 +106,11 @@ def rename_user_dir(old_directory_name, new_directory_name):
         return False
     else:
         return True
+
+
+def get_datetime_str(date_time):
+    """ Create a date-time string """
+
+    date = datetime.datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+    date_format = "%Y_%m_%d_%H_%M_%S"
+    return date.strftime(date_format)

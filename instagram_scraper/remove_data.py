@@ -3,7 +3,7 @@ import os
 import logging
 
 from instagram_scraper import helper
-from instagram_scraper.database import Database
+from instagram_scraper import Database
 from instagram_scraper import constants
 
 logger = logging.getLogger('__name__')
