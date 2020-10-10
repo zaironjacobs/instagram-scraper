@@ -8,8 +8,8 @@ import colorama
 
 from instagram_scraper import constants
 from instagram_scraper.scraper import Scraper
-from instagram_scraper.user import User
-from instagram_scraper.tag import Tag
+from instagram_scraper import User
+from instagram_scraper import Tag
 from instagram_scraper import __version__
 from instagram_scraper import helper
 from instagram_scraper import webdriver
@@ -220,6 +220,17 @@ class App:
                 print(self.__message_must_provide_tag)
                 sys.exit(0)
 
+        if not webdriver.chromedriver_present():
+            if helper.yes_or_no('would you like to download chromedriver now?'):
+                webdriver.download_chromedriver()
+                print('Download completed.')
+                sys.stdout.write('\n')
+            else:
+                print('manually download the correct chromedriver for your current installed'
+                      + ' chrome web browser and place the file in working-directory/'
+                      + constants.WEBDRIVER_DIR)
+                sys.exit(0)
+
         print('starting...')
 
         #########
@@ -259,16 +270,6 @@ class App:
         if len(self.__users) == 0 and len(self.__top_tags) == 0 and len(self.__recent_tags) == 0:
             print('provide at least one username or tag to scrape.')
             sys.exit(0)
-
-        if not webdriver.chromedriver_present():
-            if helper.yes_or_no('would you like to download chromedriver now?'):
-                webdriver.download_chromedriver()
-                print('Download completed.')
-            else:
-                print('manually download the correct chromedriver for your current installed'
-                      + ' chrome web browser and place the file in working-directory/'
-                      + constants.WEBDRIVER_DIR)
-                sys.exit(0)
 
         self.__scraper = Scraper(headful, max_download, login_username)
 

@@ -1,25 +1,22 @@
 INSTAGRAM_URL = 'https://www.instagram.com/'
 INSTAGRAM_USER_INFO_URL_DEFAULT = 'https://www.instagram.com/{}/?__a=1'
 INSTAGRAM_USER_INFO_URL_MOBILE = 'https://i.instagram.com/api/v1/users/{}/info/'
+INSTAGRAM_EXPLORE_URL = 'https://www.instagram.com/explore/tags/{}/'
 
 CHROMEDRIVER = 'chromedriver'
-
 LOG_FILE = 'igscraper.log'
 CHROMEDRIVER_LOG_FILE = 'chromedriver.log'
 WEBDRIVER_DIR = 'webdriver'
 LOCAL_DB = 'igscraper.db'
 USERS_DIR = 'users'
 TAGS_DIR = 'tags'
-
 TAG_TYPE_TOP = 'top'
 TAG_TYPE_RECENT = 'recent'
 
 # CSS & ID
 USERNAME_CSS = '._7UhW9.fKFbl.yUEEX.KV-D4.fDxYl'
 POSTS_CSS = '.v1Nh3.kIKUG._bz0w'
-PAGE_NOT_AVAILABLE_PRIVATE_CSS = ('.error-container.-cx-PRIVATE-ErrorPage__errorContainer.'
-                                  '-cx-PRIVATE-ErrorPage__errorContainer__')
-PAGE_NOT_AVAILABLE_PUBLIC_CSS = '.MCXLF'
+PAGE_USERNAME = '.sqdOP.yWX7d._8A5w5.ZIAjV'
 DISPLAY_PIC_PUBLIC_CSS = '._6q-tv'
 DISPLAY_PIC_PRIVATE_CSS = '.be6sR'
 CREDENTIALS_CSS = '._2hvTZ.pexuQ.zyHYP'
@@ -34,7 +31,7 @@ FAILED_LOGIN_MESSAGE_CSS = '.eiCW-'
 USER_PRIVATE_CSS = '.rkEop'
 SHOW_MORE_POSTS_CSS = '._7UhW9.xLCgt.qyrsm.h_zdq.uL8Hv.l4b0S'
 NO_NOTIFICATIONS_BUTTON_CSS = '.aOOlW.HoLwm'
-NOT_SAVE_LOGIN_INFO_BUTTON_CSS = '.sqdOP.yWX7d.y3zKF'
+BUTTON_NO_SAVE_LOGIN_INFO_CSS = '.sqdOP.yWX7d.y3zKF'
 IMG_CSS = '.FFVAD'
 VID_CSS = '.tWeCl'
 STORIES_DP_CSS = '.RR-M-.h5uC0'
