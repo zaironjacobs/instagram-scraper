@@ -33,7 +33,7 @@ class ScrapeTopTags(actions.Action):
         try:
             top_tags_box_element = self._web_driver.find_element_by_xpath(constants.TOP_TAGS_XPATH)
         except (NoSuchElementException, StaleElementReferenceException):
-            print(self.__c_fore.RED + 'No posts found' + self.__c_style.RESET_ALL)
+            print(self.__c_fore.RED + 'no posts found' + self.__c_style.RESET_ALL)
             return
 
         try:
