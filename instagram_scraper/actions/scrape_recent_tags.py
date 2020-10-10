@@ -40,14 +40,14 @@ class ScrapeRecentTags(actions.Action):
             post_elements = recent_tags_box_element.find_elements_by_css_selector(constants.POSTS_CSS + ' [href]')
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
-            self._on_fail()
+            self.on_fail()
             return
 
         try:
             self.__tag.post_links = [post_element.get_attribute('href') for post_element in post_elements]
         except StaleElementReferenceException as err:
             logger.error(err)
-            self._on_fail()
+            self.on_fail()
         else:
             self.__tag.post_links = self.__tag.post_links[:self.__max_download]
 
@@ -61,6 +61,6 @@ class ScrapeRecentTags(actions.Action):
                 progress_bar.update(1)
             progress_bar.close()
 
-    def _on_fail(self):
+    def on_fail(self):
         print('an error occurred while downloading images/videos')
         self._scraper.stop()

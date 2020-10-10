@@ -23,5 +23,5 @@ class CountStories(actions.Action):
         except (NoSuchElementException, StaleElementReferenceException):
             return 0
 
-    def _on_fail(self):
+    def on_fail(self):
         pass

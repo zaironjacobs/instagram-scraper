@@ -28,7 +28,7 @@ class InitScrape(actions.Action):
             self._web_driver.find_element_by_css_selector(constants.PAGE_USERNAME)
         except (NoSuchElementException, StaleElementReferenceException):
             logger.warning('page not available at %s', self.__link)
-            self._on_fail()
+            self.on_fail()
 
         if actions.PostHasMultipleContent(self._scraper, self.__link).do():
             actions.ScrapeMultipleContent(self._scraper, self.__link, self.__output_path).do()
@@ -37,6 +37,6 @@ class InitScrape(actions.Action):
             actions.ScrapeSingleContent(self._scraper, self.__link, self.__output_path).do()
             self.__database.insert_post(self.__link, False, self.__userid)
 
-    def _on_fail(self):
+    def on_fail(self):
         print('page not available at %s', self.__link)
         self._scraper.stop()

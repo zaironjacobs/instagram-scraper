@@ -21,5 +21,5 @@ class PostHasMultipleContent(actions.Action):
         except (NoSuchElementException, StaleElementReferenceException):
             return False
 
-    def _on_fail(self):
+    def on_fail(self):
         pass

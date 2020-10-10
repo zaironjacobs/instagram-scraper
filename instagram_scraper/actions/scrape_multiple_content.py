@@ -47,7 +47,7 @@ class ScrapeMultipleContent(actions.Action):
         except (NoSuchElementException, StaleElementReferenceException) as err:
             logger.error(err)
             logger.error('error downloading post: %s', self.__link)
-            self._on_fail()
+            self.on_fail()
             return
         else:
             post_content_count = len(elements)
@@ -60,7 +60,7 @@ class ScrapeMultipleContent(actions.Action):
                 ul_element = self._web_driver.find_element_by_css_selector(constants.MULTIPLE_CONTENT_UL_CSS)
             except (NoSuchElementException, StaleElementReferenceException) as err:
                 logger.error(err)
-                self._on_fail()
+                self.on_fail()
                 return
 
             # First displayed content is found at the first li inside ul
@@ -69,7 +69,7 @@ class ScrapeMultipleContent(actions.Action):
                     li_element = ul_element.find_elements_by_css_selector(constants.MULTIPLE_CONTENT_LI_CSS)[0]
                 except (NoSuchElementException, StaleElementReferenceException) as err:
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
             # All displayed content that is not first or last is found at the second li inside ul
             elif 0 < i < post_content_count:
@@ -77,7 +77,7 @@ class ScrapeMultipleContent(actions.Action):
                     li_element = ul_element.find_elements_by_css_selector(constants.MULTIPLE_CONTENT_LI_CSS)[1]
                 except (NoSuchElementException, StaleElementReferenceException) as err:
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
             # Last displayed content is found at the last li inside ul
             elif i == post_content_count - 1:
@@ -85,7 +85,7 @@ class ScrapeMultipleContent(actions.Action):
                     li_element = ul_element.find_elements_by_css_selector(constants.MULTIPLE_CONTENT_LI_CSS)[-1]
                 except (NoSuchElementException, StaleElementReferenceException) as err:
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
             # Get the image src from the li element
             try:
@@ -102,7 +102,7 @@ class ScrapeMultipleContent(actions.Action):
                 except (OSError, RequestException) as err:
                     print('error downloading')
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
                 if i < post_content_count - 1:
                     click_next_control()
@@ -122,12 +122,12 @@ class ScrapeMultipleContent(actions.Action):
                 except (OSError, RequestException) as err:
                     print('error downloading')
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
                 if i < post_content_count - 1:
                     click_next_control()
                 continue
 
-    def _on_fail(self):
+    def on_fail(self):
         print('an error occurred while downloading images/videos')
         self._scraper.stop()

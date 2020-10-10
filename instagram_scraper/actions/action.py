@@ -12,4 +12,4 @@ class Action:
     def do(self): raise NotImplementedError
 
     @abstractmethod
-    def _on_fail(self): raise NotImplementedError
+    def on_fail(self): raise NotImplementedError

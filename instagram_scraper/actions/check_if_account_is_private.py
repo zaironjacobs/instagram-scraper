@@ -22,5 +22,5 @@ class CheckIfAccountIsPrivate(actions.Action):
         else:
             return True
 
-    def _on_fail(self):
+    def on_fail(self):
         pass

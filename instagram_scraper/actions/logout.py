@@ -27,11 +27,11 @@ class Logout(actions.Action):
             self._web_driver.find_elements_by_css_selector(constants.SETTINGS_BUTTONS_CSS)[8].click()
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
             logger.error(err)
-            self._on_fail()
+            self.on_fail()
             return
         else:
             self._scraper.is_logged_in = False
             time.sleep(2)
 
-    def _on_fail(self):
+    def on_fail(self):
         print('logout failed')

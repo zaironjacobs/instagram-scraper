@@ -29,7 +29,7 @@ class ScrapeStories(actions.Action):
             self._web_driver.find_element_by_css_selector(constants.STORIES_TAP_CSS).click()
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
             logger.error(err)
-            self._on_fail()
+            self.on_fail()
         else:
             time.sleep(1)
 
@@ -50,7 +50,7 @@ class ScrapeStories(actions.Action):
                     retriever.download(vid_url, self.__user.output_user_stories_path)
                 except (OSError, RequestException) as err:
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
                 progress_bar.update(1)
 
@@ -73,7 +73,7 @@ class ScrapeStories(actions.Action):
                     retriever.download(img_url, self.__user.output_user_stories_path)
                 except (OSError, RequestException) as err:
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
                 progress_bar.update(1)
 
@@ -85,6 +85,6 @@ class ScrapeStories(actions.Action):
 
         progress_bar.close()
 
-    def _on_fail(self):
+    def on_fail(self):
         print('an error occurred while downloading images/videos')
         self._scraper.stop()

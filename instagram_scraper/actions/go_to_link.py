@@ -24,7 +24,7 @@ class GoToLink(actions.Action):
 
         if self.__page_reload_tries > 5:
             logger.error('page load timeout')
-            self._on_fail()
+            self.on_fail()
 
         current_link = self._web_driver.current_url
         current_link = current_link.strip('/')
@@ -59,11 +59,11 @@ class GoToLink(actions.Action):
         except (TimeoutException, WebDriverException) as err:
             logger.error(err)
             logger.error('page load timeout')
-            self._on_fail()
+            self.on_fail()
 
         if not self._scraper.cookies_accepted:
             actions.AcceptCookies(self._scraper).do()
 
-    def _on_fail(self):
+    def on_fail(self):
         print('\npage load timeout')
         self._scraper.stop()

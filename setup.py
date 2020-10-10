@@ -4,7 +4,7 @@ from setuptools import find_packages
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
-version = '1.0.7'
+version = '1.0.8'
 
 requires = [
     'colorama>=0.4.3',

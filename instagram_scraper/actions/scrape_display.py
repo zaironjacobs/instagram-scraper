@@ -39,7 +39,7 @@ class ScrapeDisplay(actions.Action):
             retriever.download(display_picture_url, output_path=self.__user.output_user_dp_path)
         except (OSError, RequestException) as err:
             logger.error(err)
-            self._on_fail()
+            self.on_fail()
 
-    def _on_fail(self):
+    def on_fail(self):
         print('error downloading display picture')

@@ -44,7 +44,7 @@ class ScrapeSingleContent(actions.Action):
                 retriever.download(img_url, self.__output_path, file_name=file_name)
             except (OSError, RequestException) as err:
                 logger.error(err)
-                self._on_fail()
+                self.on_fail()
 
         # Get the video
         try:
@@ -59,8 +59,8 @@ class ScrapeSingleContent(actions.Action):
                 retriever.download(vid_url, self.__output_path, file_name=file_name)
             except (OSError, RequestException) as err:
                 logger.error(err)
-                self._on_fail()
+                self.on_fail()
 
-    def _on_fail(self):
+    def on_fail(self):
         print('an error occurred while downloading images/videos')
         self._scraper.stop()

@@ -88,7 +88,7 @@ class GrabPostLinks(actions.Action):
                     show_more_posts.click()
                 except ElementClickInterceptedException as err:
                     logger.error(err)
-                    self._on_fail()
+                    self.on_fail()
 
             try:
                 self._web_driver.find_element_by_css_selector(constants.SCROLL_LOAD_CSS)
@@ -110,6 +110,6 @@ class GrabPostLinks(actions.Action):
                 width = self._web_driver.get_window_size()['width']
                 self._web_driver.set_window_size(width, height)
 
-    def _on_fail(self):
+    def on_fail(self):
         print('error while retrieving post links')
         self._scraper.stop()

@@ -22,10 +22,10 @@ class AcceptCookies(actions.Action):
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
             logger.error('error accepting instagram cookies')
             logger.error(err)
-            self._on_fail()
+            self.on_fail()
         else:
             self._scraper.cookies_accepted = True
 
-    def _on_fail(self):
+    def on_fail(self):
         print('error accepting instagram cookies')
         self._scraper.stop()

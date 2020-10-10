@@ -42,7 +42,7 @@ class Login(actions.Action):
 
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
             logger.error(err)
-            self._on_fail()
+            self.on_fail()
 
         # Enter security code if asked for
         try:
@@ -59,7 +59,7 @@ class Login(actions.Action):
                 self._web_driver.find_element_by_css_selector(constants.SECURITY_BOX_BUTTON).click()
             except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
                 logger.info(err)
-                self._on_fail()
+                self.on_fail()
             else:
                 time.sleep(4)
 
@@ -78,7 +78,7 @@ class Login(actions.Action):
             pass
         else:
             logger.error('failed login message appeared')
-            self._on_fail()
+            self.on_fail()
 
         # Click no on message asking to turn on notifications
         try:
@@ -88,6 +88,6 @@ class Login(actions.Action):
 
         self._scraper.is_logged_in = True
 
-    def _on_fail(self):
+    def on_fail(self):
         print('login failed')
         self._scraper.stop()
