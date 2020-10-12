@@ -1,4 +1,4 @@
-__version__ = '1.0.9'
+__version__ = '1.0.10'
 
 from instagram_scraper.database import Database
 from instagram_scraper.progress_bar import ProgressBar

@@ -100,7 +100,7 @@ view any posts without being logged in.*
 
 --top-tags              Top tags to scrape.
 
---recent-tags           Recent tags to scrape (also provide a maximum amount to download with --max).
+--recent-tags           Recent tags to scrape (also provide a maximum amount of posts to download with --max).
 
 --max                   Maximum number of posts to scrape.
 

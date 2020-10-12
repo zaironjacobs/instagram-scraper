@@ -4,14 +4,13 @@ from setuptools import find_packages
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
-version = '1.0.9'
+version = '1.0.10'
 
 requires = [
     'colorama>=0.4.3',
     'requests>=2.24.0',
     'selenium>=3.141.0',
     'urllib3>=1.25.10',
-    'simplejson>=3.17.2',
     'get-chromedriver>=1.1.3',
     'bs4>=0.0.1'
 ]

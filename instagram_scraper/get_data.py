@@ -8,7 +8,7 @@ from requests.exceptions import HTTPError
 from requests.exceptions import Timeout
 from requests.exceptions import RequestException
 from requests.exceptions import ConnectionError
-from simplejson.errors import JSONDecodeError
+from json.decoder import JSONDecodeError
 from bs4 import BeautifulSoup
 
 from instagram_scraper import Database
@@ -68,7 +68,11 @@ def get_id_by_username_from_db(username):
 
 
 def get_id_by_username_from_ig(username):
-    result = requests.get(constants.INSTAGRAM_USER_INFO_URL_DEFAULT.format(username))
+    session = __retry_session(retries=5,
+                              backoff_factor=0.1,
+                              status_forcelist=[429, 500, 502, 503, 504],
+                              method_whitelist=['GET'])
+    result = session.get(constants.INSTAGRAM_USER_INFO_URL_DEFAULT.format(username))
     soup = BeautifulSoup(result.content, 'html.parser')
 
     try:
@@ -107,20 +111,25 @@ def get_username_by_id(user_id):
     }
 
     try:
-        session = __retry_session(retries=3,
+        session = __retry_session(retries=5,
                                   backoff_factor=0.1,
                                   status_forcelist=[429, 500, 502, 503, 504],
                                   method_whitelist=['GET'])
-        res = session.get(constants.INSTAGRAM_USER_INFO_URL_MOBILE.format(user_id), headers=headers)
+        result = session.get(constants.INSTAGRAM_USER_INFO_URL_MOBILE.format(user_id), headers=headers)
+
     except (HTTPError, ConnectionError, Timeout, RequestException) as err:
         logger.error(err)
+
     else:
-        if res.status_code == 200:
+
+        if result.status_code == 200:
+
             try:
-                user_info = res.json()
+                user_info = result.json()
             except JSONDecodeError as err:
                 logger.error('JSONDecodeError: %s', str(err))
             else:
+
                 try:
                     username = user_info['user']['username']
                 except KeyError as err:
@@ -128,7 +137,6 @@ def get_username_by_id(user_id):
                     logger.error('Unable to fetch username')
                 else:
                     return username
-    return None
 
 
 def __retry_session(retries, backoff_factor, status_forcelist, method_whitelist):
