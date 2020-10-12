@@ -223,7 +223,7 @@ class App:
         if not webdriver.chromedriver_present():
             if helper.yes_or_no('would you like to download chromedriver now?'):
                 webdriver.download_chromedriver()
-                print('Download completed.')
+                print('download completed')
                 sys.stdout.write('\n')
             else:
                 print('manually download the correct chromedriver for your current installed'
