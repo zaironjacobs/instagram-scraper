@@ -1,10 +1,10 @@
 from setuptools import setup
 from setuptools import find_packages
+from app_info import __app_name__
+from app_info import __app_version__
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
-
-version = '1.0.10'
 
 requires = [
     'colorama>=0.4.3',
@@ -16,19 +16,19 @@ requires = [
 ]
 
 setup(
-    name='igscraper',
-    version=version,
+    name=__app_name__,
+    version=__app_version__,
     author='Zairon Jacobs',
     author_email='zaironjacobs@gmail.com',
     description=('A command line application that uses Selenium to download all posts '
                  'and stories from an Instagram profile.'),
     long_description=long_description,
     url='https://github.com/zaironjacobs/instagram-scraper',
-    download_url='https://github.com/zaironjacobs/instagram-scraper/archive/v' + version + '.tar.gz',
+    download_url='https://github.com/zaironjacobs/instagram-scraper/archive/v' + __app_version__ + '.tar.gz',
     keywords=['instagram', 'scraper', 'download', 'photos', 'pictures', 'videos', 'selenium'],
     packages=find_packages(),
     entry_points={
-        'console_scripts': ['igscraper' + '=instagram_scraper.app:main'],
+        'console_scripts': [__app_name__ + '=instagram_scraper.app:main'],
     },
     install_requires=requires,
     license='MIT',

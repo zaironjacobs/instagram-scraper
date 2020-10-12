@@ -9,7 +9,7 @@ from requests.exceptions import RequestException
 from instagram_scraper import constants
 from instagram_scraper import actions
 from instagram_scraper import retriever
-from instagram_scraper import ProgressBar
+from instagram_scraper.progress_bar import ProgressBar
 
 logger = logging.getLogger('__name__')
 

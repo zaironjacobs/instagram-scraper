@@ -5,7 +5,7 @@ from selenium.common.exceptions import StaleElementReferenceException
 import colorama
 
 from instagram_scraper import constants
-from instagram_scraper import ProgressBar
+from instagram_scraper.progress_bar import ProgressBar
 from instagram_scraper import actions
 
 logger = logging.getLogger('__name__')

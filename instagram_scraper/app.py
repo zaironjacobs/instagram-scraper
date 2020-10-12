@@ -8,9 +8,9 @@ import colorama
 
 from instagram_scraper import constants
 from instagram_scraper.scraper import Scraper
-from instagram_scraper import User
-from instagram_scraper import Tag
-from instagram_scraper import __version__
+from instagram_scraper.user import User
+from instagram_scraper.tag import Tag
+from app_info import __app_version__
 from instagram_scraper import helper
 from instagram_scraper import webdriver
 from instagram_scraper import remove_data
@@ -80,7 +80,7 @@ class App:
         ###########
         self.__args_version = self.__args.version
         if self.__arg_passed(self.__args_version):
-            print('v' + __version__)
+            print('v' + __app_version__)
             sys.exit(0)
 
         ##############

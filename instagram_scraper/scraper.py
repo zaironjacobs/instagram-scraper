@@ -11,9 +11,9 @@ from selenium.common.exceptions import SessionNotCreatedException
 
 import colorama
 
-from instagram_scraper import Database
+from instagram_scraper.database import Database
 from instagram_scraper import constants
-from instagram_scraper import ProgressBar
+from instagram_scraper.progress_bar import ProgressBar
 from instagram_scraper import helper
 from instagram_scraper import get_data
 from instagram_scraper import actions
