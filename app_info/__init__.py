@@ -1,2 +1,2 @@
 __app_name__ = 'igscraper'
-__app_version__ = '1.0.11'
+__app_version__ = '1.0.12'
