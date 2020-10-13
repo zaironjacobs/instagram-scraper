@@ -47,18 +47,17 @@
         },
         "colorama": {
             "hashes": [
-                "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff",
-                "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"
+                "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"
             ],
             "index": "pypi",
-            "version": "==0.4.3"
+            "version": "==0.4.4"
         },
         "get-chromedriver": {
             "hashes": [
-                "sha256:22d9a8e6ec120e8d9dd0ef78301b2fe4a7087d09f62176bee320fddc888c07a4"
+                "sha256:d18e9a11eb11debdb192e6957ba45a388cf294409bdcd2659e96ba3a7622320b"
             ],
             "index": "pypi",
-            "version": "==1.1.4"
+            "version": "==1.1.7"
         },
         "idna": {
             "hashes": [
@@ -120,11 +119,10 @@
         },
         "colorama": {
             "hashes": [
-                "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff",
-                "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"
+                "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"
             ],
             "index": "pypi",
-            "version": "==0.4.3"
+            "version": "==0.4.4"
         },
         "iniconfig": {
             "hashes": [
