@@ -11,7 +11,7 @@ requires = [
     'requests>=2.24.0',
     'selenium>=3.141.0',
     'urllib3>=1.25.10',
-    'get-chromedriver>=1.1.3',
+    'get-chromedriver>=1.1.7',
     'bs4>=0.0.1'
 ]
 
