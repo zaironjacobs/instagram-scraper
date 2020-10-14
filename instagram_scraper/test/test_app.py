@@ -5,8 +5,9 @@ import subprocess
 import platform
 
 from instagram_scraper import constants
-from app_info import __app_version__
-from app_info import __app_name__
+from instagram_scraper import __version__
+
+name = 'igscraper'
 
 # Change to the current test directory
 os.chdir(os.path.dirname(__file__))
@@ -18,7 +19,7 @@ class TestApp:
     # WEBDRIVER FILE EXISTS #
     #########################
     def test_webdriver_file(self):
-        process = subprocess.Popen([__app_name__, 'instagram', '--max', '1'],
+        process = subprocess.Popen([name, 'instagram', '--max', '1'],
                                    stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE)
         process.communicate('yes'.encode())[0].rstrip()
@@ -35,7 +36,7 @@ class TestApp:
     # USER DISPLAY PICTURE EXISTS #
     ###############################
     def test_user_display_file(self):
-        process = subprocess.Popen([__app_name__, 'instagram', '--max', '1'],
+        process = subprocess.Popen([name, 'instagram', '--max', '1'],
                                    stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE)
         process.communicate('yes'.encode())[0].rstrip()
@@ -53,7 +54,7 @@ class TestApp:
     #####################################
     def test_user_posts_file(self):
         amount = '5'
-        process = subprocess.Popen([__app_name__, 'instagram', '--max', amount],
+        process = subprocess.Popen([name, 'instagram', '--max', amount],
                                    stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE)
         process.communicate('yes'.encode())[0].rstrip()
@@ -73,7 +74,7 @@ class TestApp:
     #######################################
     def test_recent_tags_file(self):
         amount = '5'
-        process = subprocess.Popen([__app_name__, '--recent-tags', 'instagram', '--max', amount],
+        process = subprocess.Popen([name, '--recent-tags', 'instagram', '--max', amount],
                                    stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE)
         process.communicate('yes'.encode())[0].rstrip()
@@ -93,7 +94,7 @@ class TestApp:
     #######################################
     def test_top_tags_file(self):
         amount = '5'
-        process = subprocess.Popen([__app_name__, '--top-tags', 'instagram', '--max', amount],
+        process = subprocess.Popen([name, '--top-tags', 'instagram', '--max', amount],
                                    stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE)
         process.communicate('yes'.encode())[0].rstrip()
@@ -112,9 +113,9 @@ class TestApp:
     # VERSION #
     ###########
     def test_version(self):
-        process = subprocess.Popen([__app_name__, '--version'], stdout=subprocess.PIPE)
+        process = subprocess.Popen([name, '--version'], stdout=subprocess.PIPE)
         actual = process.stdout.readline().rstrip().decode('utf-8')
-        assert 'v' + __app_version__ == str(actual)
+        assert 'v' + __version__ == str(actual)
 
     ###########
     # CLEANUP #
