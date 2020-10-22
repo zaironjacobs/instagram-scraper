@@ -4,13 +4,20 @@ import pytest
 import subprocess
 import platform
 
-from instagram_scraper import constants
 from instagram_scraper import __version__
 
 name = 'igscraper'
 
-# Change to the current test directory
-os.chdir(os.path.dirname(__file__))
+test_dir = os.path.dirname(__file__)
+temp_dir = test_dir + '/temp'
+
+# Change to the current test dir
+os.chdir(test_dir)
+
+# Create temp dir and change to the temp dir
+if not os.path.exists('temp'):
+    os.makedirs('temp')
+os.chdir('temp')
 
 
 class TestApp:
@@ -123,23 +130,8 @@ class TestApp:
     @pytest.fixture(scope='session', autouse=True)
     def cleanup(self):
         yield
-        try:
-            shutil.rmtree(constants.USERS_DIR)
-        except FileNotFoundError:
-            pass
-        try:
-            shutil.rmtree(constants.TAGS_DIR)
-        except FileNotFoundError:
-            pass
-        try:
-            shutil.rmtree(constants.WEBDRIVER_DIR)
-        except FileNotFoundError:
-            pass
-        try:
-            os.remove(constants.LOCAL_DB)
-        except FileNotFoundError:
-            pass
-        try:
-            os.remove(constants.LOG_FILE)
-        except FileNotFoundError:
-            pass
+        for root, dirs, files in os.walk(temp_dir):
+            for rm_file in files:
+                os.remove(os.path.join(root, rm_file))
+            for rm_dir in dirs:
+                shutil.rmtree(rm_dir)

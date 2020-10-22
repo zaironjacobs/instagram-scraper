@@ -38,5 +38,5 @@ class InitScrape(actions.Action):
             self.__database.insert_post(self.__link, False, self.__userid)
 
     def on_fail(self):
-        print('page not available at %s', self.__link)
+        print('\npage not available at %s', self.__link)
         self._scraper.stop()

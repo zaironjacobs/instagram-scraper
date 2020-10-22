@@ -62,5 +62,5 @@ class ScrapeSingleContent(actions.Action):
                 self.on_fail()
 
     def on_fail(self):
-        print('an error occurred while downloading images/videos')
+        print('\nan error occurred while downloading images/videos')
         self._scraper.stop()

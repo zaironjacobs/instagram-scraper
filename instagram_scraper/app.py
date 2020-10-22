@@ -56,6 +56,9 @@ class App:
             print(self.__msg_error_unrecognized_argument)
             sys.exit(0)
 
+        ###################
+        # DEFAULT NO ARGS #
+        ###################
         if len(sys.argv) == 1:
             arguments.print_help()
             sys.exit(0)
@@ -289,6 +292,7 @@ class App:
 
     def __init_logging(self):
         """ Initialize logging if igscraper.log is present """
+
         logger = logging.getLogger('__name__')
         if os.path.exists(constants.LOG_FILE):
             logger.setLevel(logging.DEBUG)

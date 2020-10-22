@@ -104,8 +104,6 @@ view any posts without being logged in.*
 
 --max                   Maximum number of posts to scrape.
 
---set-driver            Choose a webdriver.
-
 --headful               Display the browser UI.
 
 --list-users            List all scraped users.

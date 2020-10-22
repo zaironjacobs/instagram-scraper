@@ -63,5 +63,5 @@ class ScrapeTopTags(actions.Action):
             progress_bar.close()
 
     def on_fail(self):
-        print('an error occurred while downloading images/videos')
+        print('\nan error occurred while downloading images/videos')
         self._scraper.stop()
