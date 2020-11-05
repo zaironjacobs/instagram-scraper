@@ -6,17 +6,17 @@ from signal import signal, SIGINT
 
 import colorama
 
-from instagram_scraper import constants
-from instagram_scraper.scraper import Scraper
-from instagram_scraper.user import User
-from instagram_scraper.tag import Tag
-from instagram_scraper import __version__
-from instagram_scraper import helper
-from instagram_scraper import webdriver
-from instagram_scraper import remove_data
-from instagram_scraper import update_data
-from instagram_scraper import get_data
-from instagram_scraper import arguments
+from . import constants
+from .scraper import Scraper
+from .user import User
+from .tag import Tag
+from . import __version__
+from . import helper
+from . import webdriver
+from . import remove_data
+from . import update_data
+from . import get_data
+from . import arguments
 
 
 def main():
@@ -66,31 +66,31 @@ class App:
         ########
         # HELP #
         ########
-        self.__args_help = self.__args.help
-        if self.__arg_passed(self.__args_help):
+        self.__arg_help = self.__args.help
+        if self.__arg_passed(self.__arg_help):
             arguments.print_help()
             sys.exit(0)
 
         ########
         # LOG #
         ########
-        self.__args_log = self.__args.log
-        if self.__arg_passed(self.__args_log):
+        self.__arg_log = self.__args.log
+        if self.__arg_passed(self.__arg_log):
             open(constants.LOG_FILE, 'a').close()
 
         ###########
         # VERSION #
         ###########
-        self.__args_version = self.__args.version
-        if self.__arg_passed(self.__args_version):
+        self.__arg_version = self.__args.version
+        if self.__arg_passed(self.__arg_version):
             print('v' + __version__)
             sys.exit(0)
 
         ##############
         # LIST USERS #
         ##############
-        self.__args_list_users = self.__args.list_users
-        if self.__arg_passed(self.__args_list_users):
+        self.__arg_list_users = self.__args.list_users
+        if self.__arg_passed(self.__arg_list_users):
             if self.__is_db_present():
                 self.__list_all_users()
                 sys.exit(0)
@@ -101,8 +101,8 @@ class App:
         #############
         # LIST TAGS #
         #############
-        self.__args_list_tags = self.__args.list_tags
-        if self.__arg_passed(self.__args_list_tags):
+        self.__arg_list_tags = self.__args.list_tags
+        if self.__arg_passed(self.__arg_list_tags):
             if self.__is_db_present():
                 self.__list_all_tags()
                 sys.exit(0)
@@ -113,8 +113,8 @@ class App:
         ################
         # REMOVE USERS #
         ################
-        self.__args_remove_users = self.__args.remove_users
-        if self.__arg_passed(self.__args_remove_users):
+        self.__arg_remove_users = self.__args.remove_users
+        if self.__arg_passed(self.__arg_remove_users):
             if self.__is_db_present():
                 remove_data.remove_users_by_username(self.__args.remove_users)
                 sys.exit(0)
@@ -125,10 +125,10 @@ class App:
         ###############
         # REMOVE TAGS #
         ###############
-        self.__args_remove_tags = self.__args.remove_tags
-        if self.__arg_passed(self.__args_remove_tags):
+        self.__arg_remove_tags = self.__args.remove_tags
+        if self.__arg_passed(self.__arg_remove_tags):
             if self.__is_db_present():
-                remove_data.remove_tags_by_tagname(self.__args_remove_tags)
+                remove_data.remove_tags_by_tagname(self.__arg_remove_tags)
                 sys.exit(0)
             else:
                 print(self.__message_no_db_found)
@@ -137,10 +137,10 @@ class App:
         #########################
         # REMOVE TAGS BY NUMBER #
         #########################
-        self.__args_remove_tags_n = self.__args.remove_tags_n
-        if self.__arg_passed(self.__args_remove_tags_n):
+        self.__arg_remove_tags_n = self.__args.remove_tags_n
+        if self.__arg_passed(self.__arg_remove_tags_n):
             if self.__is_db_present():
-                remove_data.remove_tags_by_number(get_data.get_tagnames_dict(), self.__args_remove_tags_n)
+                remove_data.remove_tags_by_number(get_data.get_tagnames_dict(), self.__arg_remove_tags_n)
                 sys.exit(0)
             else:
                 print(self.__message_no_db_found)
@@ -149,10 +149,10 @@ class App:
         ##########################
         # REMOVE USERS BY NUMBER #
         ##########################
-        self.__args_remove_users_n = self.__args.remove_users_n
-        if self.__arg_passed(self.__args_remove_users_n):
+        self.__arg_remove_users_n = self.__args.remove_users_n
+        if self.__arg_passed(self.__arg_remove_users_n):
             if self.__is_db_present():
-                remove_data.remove_users_by_number(get_data.get_usernames_dict(), self.__args_remove_users_n)
+                remove_data.remove_users_by_number(get_data.get_usernames_dict(), self.__arg_remove_users_n)
                 sys.exit(0)
             else:
                 print(self.__message_no_db_found)
@@ -161,29 +161,29 @@ class App:
         ####################
         # REMOVE ALL USERS #
         ####################
-        self.__args_remove_all_users = self.__args.remove_all_users
-        if self.__arg_passed(self.__args_remove_all_users):
+        self.__arg_remove_all_users = self.__args.remove_all_users
+        if self.__arg_passed(self.__arg_remove_all_users):
             remove_data.remove_all_users()
             sys.exit(0)
 
         ###################
         # REMOVE ALL TAGS #
         ###################
-        self.__args_remove_all_tags = self.__args.remove_all_tags
-        if self.__arg_passed(self.__args_remove_all_tags):
+        self.__arg_remove_all_tags = self.__args.remove_all_tags
+        if self.__arg_passed(self.__arg_remove_all_tags):
             remove_data.remove_all_tags()
             sys.exit(0)
 
         #######
         # MAX #
         #######
-        self.__args_max = self.__args.max
-        if self.__arg_passed(self.__args_max):
+        self.__arg_max = self.__args.max
+        if self.__arg_passed(self.__arg_max):
             try:
-                if int(self.__args_max[0]) < 1:
+                if int(self.__arg_max[0]) < 1:
                     print('--max has to be 1 or greater')
                     sys.exit(0)
-                max_download = int(self.__args_max[0])
+                max_download = int(self.__arg_max[0])
             except (ValueError, TypeError, IndexError):
                 print('--max value has to be a number')
                 sys.exit(0)
@@ -193,8 +193,8 @@ class App:
         ###########
         # HEADFUL #
         ###########
-        self.__args_headful = self.__args.headful
-        if self.__arg_passed(self.__args_headful):
+        self.__arg_headful = self.__args.headful
+        if self.__arg_passed(self.__arg_headful):
             headful = True
         else:
             headful = False
@@ -203,10 +203,10 @@ class App:
         # TOP TAGS #
         ############
         self.__top_tags = []
-        self.__args_top_tags = self.__args.top_tags
-        if self.__arg_passed(self.__args_top_tags):
-            if len(self.__args_top_tags) > 0:
-                self.__top_tags = self.__create_tag_objects(self.__args_top_tags)
+        self.__arg_top_tags = self.__args.top_tags
+        if self.__arg_passed(self.__arg_top_tags):
+            if len(self.__arg_top_tags) > 0:
+                self.__top_tags = self.__create_tag_objects(self.__arg_top_tags)
             else:
                 print(self.__message_must_provide_tag)
                 sys.exit(0)
@@ -215,10 +215,10 @@ class App:
         # RECENT TAGS #
         ###############
         self.__recent_tags = []
-        self.__args_recent_tags = self.__args.recent_tags
-        if self.__arg_passed(self.__args_recent_tags):
-            if len(self.__args_recent_tags) > 0:
-                self.__recent_tags = self.__create_tag_objects(self.__args_recent_tags)
+        self.__arg_recent_tags = self.__args.recent_tags
+        if self.__arg_passed(self.__arg_recent_tags):
+            if len(self.__arg_recent_tags) > 0:
+                self.__recent_tags = self.__create_tag_objects(self.__arg_recent_tags)
             else:
                 print(self.__message_must_provide_tag)
                 sys.exit(0)
@@ -240,17 +240,17 @@ class App:
         # USERS #
         #########
         self.__users = []
-        self.__args_users = self.__args.users
-        if self.__arg_passed(self.__args_users):
-            if len(self.__args_users) > 0:
-                usernames_to_scrape = sorted(set(self.__args_users), key=lambda index: self.__args_users.index(index))
+        self.__arg_users = self.__args.users
+        if self.__arg_passed(self.__arg_users):
+            if len(self.__arg_users) > 0:
+                usernames_to_scrape = sorted(set(self.__arg_users), key=lambda index: self.__arg_users.index(index))
                 self.__users = self.__create_user_objects(usernames_to_scrape)
 
         ################
         # UPDATE USERS #
         ################
-        self.__args_update_users = self.__args.update_users
-        if self.__arg_passed(self.__args_update_users):
+        self.__arg_update_users = self.__args.update_users
+        if self.__arg_passed(self.__arg_update_users):
             if self.__is_db_present():
                 usernames_to_scrape = get_data.get_all_usernames()
                 if len(usernames_to_scrape) == 0:
@@ -264,9 +264,9 @@ class App:
         ##################
         # LOGIN USERNAME #
         ##################
-        self.__args_login_username = self.__args.login_username
-        if self.__arg_passed(self.__args_login_username):
-            login_username = self.__args_login_username[0]
+        self.__arg_login_username = self.__args.login_username
+        if self.__arg_passed(self.__arg_login_username):
+            login_username = self.__arg_login_username[0]
         else:
             login_username = None
 
@@ -383,6 +383,3 @@ class App:
         else:
             print('no tags found in the database.')
 
-
-if __name__ == "__main__":
-    main()

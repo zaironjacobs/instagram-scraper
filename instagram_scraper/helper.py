@@ -3,7 +3,7 @@ import shutil
 import logging
 import datetime
 
-from instagram_scraper import constants
+from . import constants
 
 logger = logging.getLogger('__name__')
 

@@ -6,8 +6,8 @@ import logging
 from get_chromedriver import GetChromeDriver
 from get_chromedriver.exceptions import GetChromeDriverError
 
-from instagram_scraper import constants
-from instagram_scraper import helper
+from . import constants
+from . import helper
 
 logger = logging.getLogger('__name__')
 

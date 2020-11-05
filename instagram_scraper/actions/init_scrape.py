@@ -3,8 +3,8 @@ import logging
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 
-from instagram_scraper import constants
-from instagram_scraper import actions
+from .. import constants
+from .. import actions
 
 logger = logging.getLogger('__name__')
 

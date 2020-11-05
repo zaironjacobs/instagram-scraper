@@ -11,8 +11,8 @@ from requests.exceptions import ConnectionError
 from json.decoder import JSONDecodeError
 from bs4 import BeautifulSoup
 
-from instagram_scraper.database import Database
-from instagram_scraper import constants
+from .database import Database
+from . import constants
 
 logger = logging.getLogger('__name__')
 

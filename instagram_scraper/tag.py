@@ -1,7 +1,7 @@
 import os
 
-from instagram_scraper import constants
-from instagram_scraper import helper
+from . import constants
+from . import helper
 
 
 class Tag:

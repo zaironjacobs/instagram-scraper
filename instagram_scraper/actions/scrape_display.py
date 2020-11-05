@@ -4,9 +4,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from requests.exceptions import RequestException
 
-from instagram_scraper import constants
-from instagram_scraper import retriever
-from instagram_scraper import actions
+from .. import constants
+from .. import actions
+from ..import retriever
 
 logger = logging.getLogger('__name__')
 

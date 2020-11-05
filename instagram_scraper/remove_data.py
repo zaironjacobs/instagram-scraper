@@ -2,9 +2,9 @@ import sys
 import os
 import logging
 
-from instagram_scraper import helper
-from instagram_scraper.database import Database
-from instagram_scraper import constants
+from . import helper
+from .database import Database
+from . import constants
 
 logger = logging.getLogger('__name__')
 

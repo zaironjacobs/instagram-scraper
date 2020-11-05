@@ -4,7 +4,7 @@ import pytest
 import subprocess
 import platform
 
-from instagram_scraper import __version__
+from .. import __version__
 
 name = 'igscraper'
 

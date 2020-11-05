@@ -2,12 +2,12 @@ import time
 import getpass
 import logging
 
-from instagram_scraper import constants
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.common.exceptions import StaleElementReferenceException
 
-from instagram_scraper import actions
+from .. import constants
+from .. import actions
 
 logger = logging.getLogger('__name__')
 
