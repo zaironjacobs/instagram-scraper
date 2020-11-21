@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 name = 'igscraper'
-version = '1.1.7'
+version = '1.1.8'
 
 requires = [
     'colorama>=0.4.3',
@@ -41,5 +41,5 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Natural Language :: English'
     ],
-    python_requires='>=3.8',
+    python_requires='>=3',
 )

@@ -51,7 +51,10 @@ def download_chromedriver():
 
 
 def chromedriver_present():
-    helper.rename_dir('webdrivers', constants.WEBDRIVER_DIR)
+    try:
+        helper.rename_dir('webdrivers', constants.WEBDRIVER_DIR)
+    except OSError:
+        pass
     for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
         for file in files:
             if file[:len(constants.CHROMEDRIVER)] == constants.CHROMEDRIVER:

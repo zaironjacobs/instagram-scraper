@@ -8,8 +8,8 @@ import colorama
 
 from . import constants
 from .scraper import Scraper
-from .user import User
-from .tag import Tag
+from .models.user import User
+from .models.tag import Tag
 from . import __version__
 from . import helper
 from . import webdriver
@@ -359,7 +359,7 @@ class App:
                 second = str(get_data.get_user_post_count(username))
                 print(descriptor.format(first, second))
         else:
-            print('no users found in the database.')
+            print('no users found in the database')
 
     def __list_all_tags(self):
         """ List all tags in the database """
@@ -381,5 +381,5 @@ class App:
                 third = str(get_data.get_recent_tag_post_count(tag))
                 print(descriptor.format(first, second, third))
         else:
-            print('no tags found in the database.')
+            print('no tags found in the database')
 

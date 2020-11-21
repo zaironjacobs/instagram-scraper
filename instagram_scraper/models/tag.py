@@ -1,7 +1,7 @@
 import os
 
-from . import constants
-from . import helper
+from .. import constants
+from .. import helper
 
 
 class Tag:
