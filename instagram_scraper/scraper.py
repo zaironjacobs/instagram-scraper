@@ -226,7 +226,7 @@ class Scraper:
             actions.Logout(self, self.__login_username).do()
 
         try:
-            self.web_driver.quit()
+            self.__web_driver.quit()
         except AttributeError as err:
             logger.error(err)
 

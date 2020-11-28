@@ -1,4 +1,5 @@
 import logging
+import time
 from instagram_scraper import helper
 
 from selenium.common.exceptions import NoSuchElementException
@@ -27,6 +28,7 @@ class ScrapeMultipleContent(actions.Action):
 
             try:
                 self._web_driver.find_element_by_css_selector(constants.NEXT_CONTROL_CSS).click()
+                time.sleep(1)
             except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as error:
                 logger.error(error)
                 self._scraper.stop()
