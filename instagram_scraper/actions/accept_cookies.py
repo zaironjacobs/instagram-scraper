@@ -20,12 +20,9 @@ class AcceptCookies(actions.Action):
         try:
             self._web_driver.find_element_by_css_selector(constants.ACCEPT_COOKIES_CSS).click()
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
-            logger.error('error accepting instagram cookies')
-            logger.error(err)
-            self.on_fail()
+            pass
         else:
             self._scraper.cookies_accepted = True
 
     def on_fail(self):
-        print('error accepting instagram cookies')
-        self._scraper.stop()
+        pass

@@ -48,6 +48,7 @@ class Scraper:
 
         driver_options = ChromeOptions()
         driver_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        driver_options.add_argument('--mute-audio')
         driver_options.headless = not self.__headful
 
         webdriver_path = None
@@ -130,6 +131,8 @@ class Scraper:
                   + str(stories_amount) + ' image(s)/video(s) will be downloaded from stories: '
                   + self.__c_style.RESET_ALL)
             actions.ScrapeStories(self, user, stories_amount).do()
+        else:
+            print('no stories found')
 
     def __filter_post_links(self, user):
         """
@@ -158,9 +161,16 @@ class Scraper:
 
             user.create_user_output_directories()
 
+            # Retrieve the id using requests
             userid = get_data.get_id_by_username_from_ig(user.username)
+
+            # Retrieve the id using actions if previous function has failed
             if userid is None:
-                print(self.__c_fore.RED + 'username not found' + self.__c_style.RESET_ALL)
+                userid = actions.GetId(self, user.username).do()
+
+            # Continue if id not found (username does not exists)
+            if userid is None:
+                print(self.__c_fore.RED + 'could not load user profile' + self.__c_style.RESET_ALL)
                 continue
 
             actions.ScrapeDisplay(self, user).do()
@@ -252,6 +262,10 @@ class Scraper:
     @property
     def web_driver(self):
         return self.__web_driver
+
+    @property
+    def login_username(self):
+        return self.__login_username
 
     @property
     def database(self):
