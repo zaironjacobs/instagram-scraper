@@ -16,6 +16,10 @@ from . import constants
 
 logger = logging.getLogger('__name__')
 
+headers = {
+    'user-agent': 'Instagram 155.0.0.37.107'
+}
+
 
 def get_all_usernames():
     """ Retrieve all usernames from database """
@@ -61,6 +65,8 @@ def get_tagnames_dict():
 
 
 def get_id_by_username_from_db(username):
+    """ Return the username id """
+
     database = Database()
     user_id = database.get_id_by_username(username)
     database.close_connection()
@@ -68,18 +74,23 @@ def get_id_by_username_from_db(username):
 
 
 def get_id_by_username_from_ig(username):
-    session = __retry_session(retries=5,
-                              backoff_factor=0.1,
-                              status_forcelist=[429, 500, 502, 503, 504],
-                              method_whitelist=['GET'])
-    result = session.get(constants.INSTAGRAM_USER_INFO_URL_DEFAULT.format(username))
-    soup = BeautifulSoup(result.content, 'html.parser')
+    """ Return the username id """
 
     try:
-        data = json.loads(soup.text)
-        return data['graphql']['user']['id']
-    except (JSONDecodeError, KeyError) as err:
-        logger.error('could not retrieve user id: %s', str(err))
+        session = __retry_session(retries=5,
+                                  backoff_factor=0.1,
+                                  status_forcelist=[429, 500, 502, 503, 504],
+                                  method_whitelist=['GET'])
+        result = session.get(constants.INSTAGRAM_USER_INFO_URL_DEFAULT.format(username), headers=headers)
+        soup = BeautifulSoup(result.content, 'html.parser')
+    except (HTTPError, ConnectionError, Timeout, RequestException) as err:
+        logger.error(err)
+    else:
+        try:
+            data = json.loads(soup.text)
+            return data['graphql']['user']['id']
+        except (JSONDecodeError, KeyError) as err:
+            logger.error('could not retrieve user id: %s', str(err))
 
 
 def get_user_post_count(username):
@@ -106,10 +117,6 @@ def get_recent_tag_post_count(tag):
 def get_username_by_id(user_id):
     """ Return the username id """
 
-    headers = {
-        'user-agent': 'Instagram 155.0.0.37.107'
-    }
-
     try:
         session = __retry_session(retries=5,
                                   backoff_factor=0.1,
@@ -119,7 +126,6 @@ def get_username_by_id(user_id):
 
     except (HTTPError, ConnectionError, Timeout, RequestException) as err:
         logger.error(err)
-
     else:
 
         if result.status_code == 200:

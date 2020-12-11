@@ -49,6 +49,7 @@ class Scraper:
         driver_options = ChromeOptions()
         driver_options.add_experimental_option('excludeSwitches', ['enable-logging'])
         driver_options.add_argument('--mute-audio')
+        driver_options.add_argument('--user-agent=Mozilla/5.0 Chrome/74.0.3729.169 Safari/537.36')
         driver_options.headless = not self.__headful
 
         webdriver_path = None
@@ -88,11 +89,8 @@ class Scraper:
             print('make sure Google Chrome is installed on your machine and is up to date')
             self.stop()
         else:
-            if self.__headful:
-                driver.maximize_window()
-            else:
-                driver.set_window_size(1366, 768)
-            driver.set_page_load_timeout(1800000)
+            driver.maximize_window()
+            driver.set_page_load_timeout(600)
 
             return driver
 
@@ -106,7 +104,6 @@ class Scraper:
             print(self.__c_fore.RED +
                   'unable to load profiles at this time (IP temporarily restricted by Instagram)' +
                   self.__c_style.RESET_ALL)
-            print(self.__c_fore.RED + 'try logging in' + self.__c_style.RESET_ALL)
             self.stop()
 
     def __init_login(self):

@@ -22,11 +22,11 @@ class Login(actions.Action):
         """ Login """
 
         actions.GoToLink(self._scraper, constants.INSTAGRAM_URL).do()
-        time.sleep(2)
+        time.sleep(3)
 
         # Enter username and password and click login
         try:
-            credential_elements = self._web_driver.find_elements_by_css_selector(constants.CREDENTIALS_CSS)
+            credential_elements = self._web_driver.find_elements_by_css_selector(constants.CREDENTIALS_BOXES_CSS)
 
             username_element = credential_elements[0]
             username_element.click()
@@ -39,9 +39,9 @@ class Login(actions.Action):
             self._web_driver.find_element_by_css_selector(constants.LOGIN_BUTTON_CSS).click()
 
             time.sleep(4)
-
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
             logger.error(err)
+            print(err)
             self.on_fail()
 
         # Enter security code if asked for
