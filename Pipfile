@@ -11,7 +11,7 @@ colorama = "*"
 requests = "*"
 selenium = "*"
 urllib3 = "*"
-get-chromedriver = "*"
+get-chrome-driver = "*"
 bs4 = "*"
 
 [requires]

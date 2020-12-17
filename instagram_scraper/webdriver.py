@@ -3,8 +3,8 @@ import sys
 import platform
 import logging
 
-from get_chromedriver import GetChromeDriver
-from get_chromedriver.exceptions import GetChromeDriverError
+from get_chrome_driver import GetChromeDriver
+from get_chrome_driver.exceptions import GetChromeDriverError
 
 from . import constants
 from . import helper
@@ -20,9 +20,9 @@ def download_chromedriver():
 
     if platform.system() == 'Linux':
         get_driver = GetChromeDriver('linux')
-        print(downloading_chromedriver + ' ' + get_driver.latest_stable_release_version() + '...')
+        print(downloading_chromedriver + ' ' + get_driver.stable_release_version() + '...')
         try:
-            get_driver.download_latest_stable_release(output_path=constants.WEBDRIVER_DIR, extract=True)
+            get_driver.download_stable_release(output_path=constants.WEBDRIVER_DIR, extract=True)
             os.chmod(constants.WEBDRIVER_DIR + '/' + constants.CHROMEDRIVER, 0o755)
         except GetChromeDriverError as err:
             logger.error(err)
@@ -31,9 +31,9 @@ def download_chromedriver():
 
     elif platform.system() == 'Windows':
         get_driver = GetChromeDriver('win')
-        print(downloading_chromedriver + ' ' + get_driver.latest_stable_release_version() + '...')
+        print(downloading_chromedriver + ' ' + get_driver.stable_release_version() + '...')
         try:
-            get_driver.download_latest_stable_release(output_path=constants.WEBDRIVER_DIR, extract=True)
+            get_driver.download_stable_release(output_path=constants.WEBDRIVER_DIR, extract=True)
         except GetChromeDriverError as err:
             logger.error(err)
             print(download_error)
@@ -41,9 +41,9 @@ def download_chromedriver():
 
     elif platform.system() == 'Darwin':
         get_driver = GetChromeDriver('mac')
-        print(downloading_chromedriver + ' ' + get_driver.latest_stable_release_version() + '...')
+        print(downloading_chromedriver + ' ' + get_driver.stable_release_version() + '...')
         try:
-            get_driver.download_latest_stable_release(output_path=constants.WEBDRIVER_DIR, extract=True)
+            get_driver.download_stable_release(output_path=constants.WEBDRIVER_DIR, extract=True)
         except GetChromeDriverError as err:
             logger.error(err)
             print(download_error)
