@@ -13,7 +13,7 @@ requires = [
     'selenium>=3.141.0',
     'urllib3>=1.25.10',
     'bs4>=0.0.1',
-    'get-chrome-driver>=1.1.20'
+    'get-chrome-driver>=1.1.23'
 ]
 
 setup(

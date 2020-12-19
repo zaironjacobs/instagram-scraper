@@ -56,10 +56,10 @@
         },
         "get-chrome-driver": {
             "hashes": [
-                "sha256:4160da4df3d7ac87e51d512e2f586386cdad5f2f0d5e58c54b6130cabddcefba"
+                "sha256:8af633f7689de66a44b75ba4c7a11caf2d8d3acf5a81b624de8331ce8cda5615"
             ],
             "index": "pypi",
-            "version": "==1.1.19"
+            "version": "==1.1.23"
         },
         "idna": {
             "hashes": [
