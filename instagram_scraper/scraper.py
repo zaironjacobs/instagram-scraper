@@ -2,7 +2,6 @@ import os
 import sys
 import getpass
 import logging
-import platform
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -41,7 +40,8 @@ class Scraper:
 
         self.__web_driver = self.__start_web_driver()
 
-        self.__init_login()
+        if self.__login_username:
+            self.__init_login()
 
     def __start_web_driver(self):
         """ Start the web driver """
@@ -52,41 +52,16 @@ class Scraper:
         driver_options.add_argument('--user-agent=Mozilla/5.0 Chrome/74.0.3729.169 Safari/537.36')
         driver_options.headless = not self.__headful
 
-        webdriver_path = None
-        if platform.system() == 'Windows':
-            for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
-                for file in files:
-                    if file.lower() == constants.CHROMEDRIVER.lower() + '.exe':
-                        webdriver_path = constants.WEBDRIVER_DIR + '/' + file
-                        break
-        elif platform.system() == 'Linux':
-            for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
-                for file in files:
-                    if file.lower() == constants.CHROMEDRIVER.lower():
-                        webdriver_path = constants.WEBDRIVER_DIR + '/' + file
-                        break
-        elif platform.system() == 'Darwin':
-            for root, dirs, files in os.walk(constants.WEBDRIVER_DIR):
-                for file in files:
-                    if file.lower() == constants.CHROMEDRIVER.lower():
-                        webdriver_path = constants.WEBDRIVER_DIR + '/' + file
-                        break
-        else:
-            print(self.__c_fore.RED + 'webdriver for google chrome not found' + self.__c_style.RESET_ALL)
-            self.stop()
-
         try:
-            driver = webdriver.Chrome(
-                executable_path=webdriver_path,
-                service_log_path=os.devnull, options=driver_options)
+            driver = webdriver.Chrome(service_log_path=os.devnull, options=driver_options)
         except SessionNotCreatedException as err:
             logger.error(err)
-            print('could not start session, make sure you have the latest Chrome version installed')
+            print('could not start session')
             self.stop()
         except WebDriverException as err:
             logger.error(err)
             print('could not launch Google Chrome: ')
-            print('make sure Google Chrome is installed on your machine and is up to date')
+            print('make sure Google Chrome is installed on your machine')
             self.stop()
         else:
             driver.maximize_window()
@@ -97,7 +72,7 @@ class Scraper:
     def __check_if_ip_is_restricted(self):
         """
         Check if the official Instagram profile can be seen.
-        If not, then Instagram has temporarily restricted the ip address (login required to view profiles).
+        If not, then Instagram has temporarily restricted the ip address.
         """
 
         if get_data.get_id_by_username_from_ig('instagram') is None:
@@ -114,11 +89,10 @@ class Scraper:
             login_password = getpass.getpass(prompt='enter your password: ')
             actions.Login(self, self.__login_username, login_password).do()
             print('login success')
-            answer = helper.yes_or_no('download images and videos from stories?')
-            if answer:
-                self.__download_stories = True
+            self.__download_stories = helper.yes_or_no('download images and videos from stories?')
 
     def __init_scrape_stories(self, user):
+        """ Start function for scraping stories """
 
         print('counting stories, please wait...')
         stories_amount = actions.CountStories(self, user).do()
@@ -161,11 +135,11 @@ class Scraper:
             # Retrieve the id using requests
             userid = get_data.get_id_by_username_from_ig(user.username)
 
-            # Retrieve the id using actions if previous function has failed
+            # Retrieve the id using actions if previous method has failed
             if userid is None:
                 userid = actions.GetId(self, user.username).do()
 
-            # Continue if id not found (username does not exists)
+            # Continue to next user if id not found
             if userid is None:
                 print(self.__c_fore.RED + 'could not load user profile' + self.__c_style.RESET_ALL)
                 continue

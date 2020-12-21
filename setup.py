@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 name = 'igscraper'
-version = '1.1.14'
+version = '1.1.15'
 
 requires = [
     'colorama>=0.4.3',
@@ -13,7 +13,7 @@ requires = [
     'selenium>=3.141.0',
     'urllib3>=1.25.10',
     'bs4>=0.0.1',
-    'get-chrome-driver>=1.1.23'
+    'get-chrome-driver>=1.1.31'
 ]
 
 setup(
@@ -22,7 +22,7 @@ setup(
     author='Zairon Jacobs',
     author_email='zaironjacobs@gmail.com',
     description=('A command line application that uses Selenium to download all posts '
-                 'and stories from an Instagram profile.'),
+                 'from an Instagram profile.'),
     long_description=long_description,
     url='https://github.com/zaironjacobs/instagram-scraper',
     download_url='https://github.com/zaironjacobs/instagram-scraper/archive/v' + version + '.tar.gz',

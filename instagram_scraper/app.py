@@ -12,11 +12,12 @@ from .models.user import User
 from .models.tag import Tag
 from . import __version__
 from . import helper
-from . import webdriver
 from . import remove_data
 from . import update_data
 from . import get_data
 from . import arguments
+from get_chrome_driver import GetChromeDriver
+from get_chrome_driver.exceptions import GetChromeDriverError
 
 
 def main():
@@ -223,16 +224,13 @@ class App:
                 print(self.__message_must_provide_tag)
                 sys.exit(0)
 
-        if not webdriver.chromedriver_present():
-            if helper.yes_or_no('would you like to download chromedriver now?'):
-                webdriver.download_chromedriver()
-                print('download completed')
-                sys.stdout.write('\n')
-            else:
-                print('manually download the correct chromedriver for your current installed'
-                      + ' chrome web browser and place the file in working-directory/'
-                      + constants.WEBDRIVER_DIR)
-                sys.exit(0)
+        # Download and install ChromeDriver
+        get_driver = GetChromeDriver()
+        try:
+            get_driver.install()
+        except GetChromeDriverError:
+            print('error downloading ChromeDriver')
+            sys.exit(0)
 
         print('starting...')
 
@@ -382,4 +380,3 @@ class App:
                 print(descriptor.format(first, second, third))
         else:
             print('no tags found in the database')
-

@@ -56,10 +56,10 @@
         },
         "get-chrome-driver": {
             "hashes": [
-                "sha256:8af633f7689de66a44b75ba4c7a11caf2d8d3acf5a81b624de8331ce8cda5615"
+                "sha256:d05d691a9b1c339ec19aa038c499e9ecb801e91d5836c3ba1ab73471b0ab69a4"
             ],
             "index": "pypi",
-            "version": "==1.1.23"
+            "version": "==1.1.31"
         },
         "idna": {
             "hashes": [
@@ -90,7 +90,7 @@
                 "sha256:4bb21a6ee4707bf43b61230e80740e71bfe56e55d1f1f50924b087bb2975c851",
                 "sha256:6dc52924dc0bc710a5d16794e6b3480b2c7c08b07729505feab2b2c16661ff6e"
             ],
-            "markers": "python_version >= '3'",
+            "markers": "python_version >= '3.0'",
             "version": "==2.1"
         },
         "urllib3": {
@@ -163,7 +163,7 @@
                 "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1",
                 "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"
             ],
-            "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2'",
             "version": "==2.4.7"
         },
         "pytest": {
@@ -179,7 +179,7 @@
                 "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b",
                 "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"
             ],
-            "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2'",
             "version": "==0.10.2"
         }
     }

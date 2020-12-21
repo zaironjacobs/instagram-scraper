@@ -5,7 +5,7 @@ Instagram Scraper
 [![PyPI - Status](https://img.shields.io/pypi/status/igscraper)](https://pypi.python.org/pypi/igscraper)
 [![PyPI - License](https://img.shields.io/pypi/l/igscraper)](https://pypi.python.org/pypi/igscraper)
 
-A command-line application that uses Selenium to download all posts and stories from an Instagram profile.
+A command-line application that uses Selenium to download all posts from an Instagram profile.
 
 ## Install
 
@@ -25,12 +25,12 @@ Create a new directory and cd into the directory.
 
 Scrape a profile:
 ```console
-$ igscraper username1 username2 username3
+$ igscraper username1 username2 username3 --max 10
 ```
 
 *With --max you can provide a maximum amount of posts to download*
 
-To scrape stories you have to be logged in first. Login and scrape a profile:
+To scrape stories you have to be logged in first:
 ```console
 $ igscraper username1 username2 username3 --login-username username
 ```
@@ -62,7 +62,7 @@ $ igscraper --remove-users username1 username2
 $ igscraper --remove-tags tag1 tag2
 ```
 
-Alternative method to remove users or tags by list number:
+Remove users or tags by list number:
 ```console
 $ igscraper --remove-users-n 1 2
 ```
