@@ -1,23 +1,16 @@
 import os
 import shutil
+import time
 import pytest
 import subprocess
 import platform
 
+from get_chrome_driver import GetChromeDriver
+
 from .. import __version__
+from .. import constants
 
 name = 'igscraper'
-
-test_dir = os.path.dirname(__file__)
-temp_dir = test_dir + '/temp'
-
-# Change to the current test dir
-os.chdir(test_dir)
-
-# Create temp dir and change to the temp dir
-if not os.path.exists('temp'):
-    os.makedirs('temp')
-os.chdir('temp')
 
 
 class TestApp:
@@ -26,15 +19,18 @@ class TestApp:
     # WEBDRIVER FILE EXISTS #
     #########################
     def test_webdriver_file(self):
+        get_driver = GetChromeDriver()
+        release = get_driver.matching_version()
+
         process = subprocess.Popen([name, 'instagram', '--max', '1'],
                                    stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE)
         process.communicate('yes'.encode())[0].rstrip()
 
         if platform.system() == 'Windows':
-            file_path = 'webdriver/chromedriver.exe'
+            file_path = constants.CHROMEDRIVER + '/' + release + '/' + 'bin' + '/' + constants.CHROMEDRIVER + '.exe'
         else:
-            file_path = 'webdriver/chromedriver'
+            file_path = constants.CHROMEDRIVER + '/' + release + '/' + 'bin' + '/' + constants.CHROMEDRIVER
 
         result = os.path.isfile(file_path)
         assert result
@@ -129,9 +125,14 @@ class TestApp:
     ###########
     @pytest.fixture(scope='session', autouse=True)
     def cleanup(self):
+        # Before all tests
+        temp_dir = os.path.dirname(__file__) + '/' + 'temp'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+        os.chdir(temp_dir)
+
+        # After all tests
         yield
-        for root, dirs, files in os.walk(temp_dir):
-            for rm_file in files:
-                os.remove(os.path.join(root, rm_file))
-            for rm_dir in dirs:
-                shutil.rmtree(rm_dir)
+        time.sleep(3)
+        os.chdir(os.path.dirname(__file__))
+        shutil.rmtree(temp_dir)
