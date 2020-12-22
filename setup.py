@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 name = 'igscraper'
-version = '1.1.15'
+version = '1.1.16'
 
 requires = [
     'colorama>=0.4.3',
@@ -13,7 +13,7 @@ requires = [
     'selenium>=3.141.0',
     'urllib3>=1.25.10',
     'bs4>=0.0.1',
-    'get-chrome-driver>=1.1.31'
+    'get-chrome-driver>=1.1.33'
 ]
 
 setup(
