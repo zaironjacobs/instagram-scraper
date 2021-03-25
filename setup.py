@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 name = 'igscraper'
-version = '1.1.16'
+version = '1.1.17'
 
 requires = [
     'colorama>=0.4.3',

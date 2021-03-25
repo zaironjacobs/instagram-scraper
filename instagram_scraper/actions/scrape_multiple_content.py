@@ -1,6 +1,6 @@
 import logging
 import time
-from instagram_scraper import helper
+from .. import helper
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
