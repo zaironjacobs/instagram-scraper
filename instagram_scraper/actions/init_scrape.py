@@ -22,13 +22,19 @@ class InitScrape(actions.Action):
         Load the post page and check whether to start scraping a post with single content or multiple content.
         """
 
-        actions.GoToLink(self._scraper, self.__link).do()
-
-        try:
-            self._web_driver.find_element_by_css_selector(constants.PAGE_USERNAME)
-        except (NoSuchElementException, StaleElementReferenceException):
-            logger.warning('page not available at %s', self.__link)
-            self.on_fail()
+        # Load the post page, trigger on_fail after 3 unsuccessful tries
+        post_page_load_success = False
+        post_page_load_count = 0
+        while not post_page_load_success and post_page_load_count < 3:
+            actions.GoToLink(self._scraper, self.__link, force=True).do()
+            post_page_load_count += 1
+            try:
+                self._web_driver.find_element_by_css_selector(constants.PAGE_USERNAME)
+                post_page_load_success = True
+            except (NoSuchElementException, StaleElementReferenceException):
+                if post_page_load_count >= 3:
+                    logger.warning('error loading page: post not found at %s' % self.__link)
+                    self.on_fail()
 
         if actions.PostHasMultipleContent(self._scraper, self.__link).do():
             actions.ScrapeMultipleContent(self._scraper, self.__link, self.__output_path).do()
@@ -38,5 +44,5 @@ class InitScrape(actions.Action):
             self.__database.insert_post(self.__link, False, self.__userid)
 
     def on_fail(self):
-        print('\npage not available at %s', self.__link)
+        print('\nerror loading post')
         self._scraper.stop()

@@ -1,4 +1,5 @@
 import logging
+import time
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
@@ -37,9 +38,11 @@ class GoToLink(actions.Action):
         try:
             self._web_driver.get(link)
 
-            WebDriverWait(self._web_driver, 10).until(
-                lambda d: d.execute_script('return document.readyState') == 'complete')
+            WebDriverWait(
+                self._web_driver, 10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+            time.sleep(3)
 
+            # Check for page load failure
             try:
                 self._web_driver.find_element_by_id(constants.CHROME_RELOAD_BUTTON_ID)
                 self.__page_reload_tries += 1
@@ -47,7 +50,6 @@ class GoToLink(actions.Action):
                 self.do()
             except (NoSuchElementException, StaleElementReferenceException):
                 pass
-
             try:
                 self._web_driver.find_element_by_id(constants.SORRY_ID)
                 self.__page_reload_tries += 1

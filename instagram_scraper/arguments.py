@@ -7,6 +7,7 @@ message_help_required_tags_to_remove = descriptor.format('', 'required: add tags
 message_help_required_tags_n_to_remove = descriptor.format('', 'required: add tag numbers to remove')
 message_help_required_max = descriptor.format('', 'required: provide a max number of posts to scrape')
 message_help_recommended_max = descriptor.format('', 'recommended: provide a max number of posts to scrape')
+message_help_required_logged_in = descriptor.format('', 'required: you need to be logged in')
 
 args_options = [
     ['--login-username', 'the login username' + '\n'
@@ -19,6 +20,8 @@ args_options = [
      + message_help_required_tagname],
     ['--max', 'maximum number of posts to scrape' + '\n'
      + message_help_required_max],
+    ['--stories', 'scrape stories also' + '\n'
+     + message_help_required_logged_in],
     ['--headful', 'display the browser'],
     ['--list-users', 'list all scraped users'],
     ['--list-tags', 'list all scraped tags'],

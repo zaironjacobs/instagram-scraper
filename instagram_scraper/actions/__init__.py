@@ -15,4 +15,5 @@ from .check_if_profile_has_posts import CheckIfProfileHasPosts
 from .check_if_account_is_private import CheckIfAccountIsPrivate
 from .grab_post_links import GrabPostLinks
 from .go_to_link import GoToLink
-from .get_id import GetId
+from .get_user_id import GetUserId
+from .get_vid_src_url import GetVidSrcUrl

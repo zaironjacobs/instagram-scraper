@@ -2,6 +2,7 @@ import os
 import shutil
 import logging
 import datetime
+import re
 
 from . import constants
 
@@ -114,3 +115,16 @@ def get_datetime_str(date_time):
     date = datetime.datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S.%fZ')
     date_format = "%Y_%m_%d_%H_%M_%S"
     return date.strftime(date_format)
+
+
+def extract_post_id_from_url(url):
+    """ Return the post id """
+
+    post_id = re.search('/p/(.+)', url)
+    if post_id:
+        if post_id.group(1)[-1] == '/':
+            return post_id.group(1)[:-1]
+        return post_id.group(1)
+
+    logger.error('Could not extract the post id')
+    return ''

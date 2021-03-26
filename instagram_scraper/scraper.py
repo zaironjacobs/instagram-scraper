@@ -22,7 +22,7 @@ logger = logging.getLogger('__name__')
 
 class Scraper:
 
-    def __init__(self, headful, max_download, login_username):
+    def __init__(self, headful, download_stories, max_download, login_username):
         self.__c_fore = colorama.Fore
         self.__c_style = colorama.Style
         colorama.init()
@@ -31,17 +31,27 @@ class Scraper:
         self.__database.create_tables()
 
         self.__headful = headful
+        self.__download_stories = download_stories
         self.__max_download = max_download
         self.__login_username = login_username
 
         self.__is_logged_in = False
-        self.__download_stories = False
         self.__cookies_accepted = False
 
         self.__web_driver = self.__start_web_driver()
 
         if self.__login_username:
             self.__init_login()
+
+        if self.__max_download == 0:
+            print(self.__c_fore.RED
+                  + 'add the argument \'--max 3\' to specify a maximum amount of posts to scrape'
+                  + self.__c_style.RESET_ALL)
+            self.stop()
+
+        if not self.__is_logged_in and self.__download_stories:
+            print(self.__c_fore.RED + 'you need to be logged in to scrape stories' + self.__c_style.RESET_ALL)
+            self.stop()
 
     def __start_web_driver(self):
         """ Start the web driver """
@@ -59,7 +69,7 @@ class Scraper:
             print('could not start session')
             self.stop()
         except WebDriverException as err:
-            logger.error(err)
+            logger.error('Launch Google Chrome error: %s' % err)
             print('could not launch Google Chrome: ')
             print('make sure Google Chrome is installed on your machine')
             self.stop()
@@ -77,19 +87,20 @@ class Scraper:
 
         if get_data.get_id_by_username_from_ig('instagram') is None:
             print(self.__c_fore.RED +
-                  'unable to load profiles at this time (IP temporarily restricted by Instagram)' +
+                  'unable to load profiles at this time (IP temporarily restricted by Instagram)' + '\n' +
+                  'try to login with a DUMMY account to scrape' +
                   self.__c_style.RESET_ALL)
             self.stop()
 
     def __init_login(self):
         """ Login """
 
-        if self.__login_username:
+        if self.__login_username and not self.__is_logged_in:
             sys.stdout.write('\n')
+            print('login with a DUMMY account, never use your personal account')
             login_password = getpass.getpass(prompt='enter your password: ')
             actions.Login(self, self.__login_username, login_password).do()
             print('login success')
-            self.__download_stories = helper.yes_or_no('download images and videos from stories?')
 
     def __init_scrape_stories(self, user):
         """ Start function for scraping stories """
@@ -132,16 +143,18 @@ class Scraper:
 
             user.create_user_output_directories()
 
+            # Retrieve the id using actions
+            if self.__is_logged_in:
+                userid = actions.GetUserId(self, user.username).do()
             # Retrieve the id using requests
-            userid = get_data.get_id_by_username_from_ig(user.username)
-
-            # Retrieve the id using actions if previous method has failed
-            if userid is None:
-                userid = actions.GetId(self, user.username).do()
+            else:
+                userid = get_data.get_id_by_username_from_ig(user.username)
 
             # Continue to next user if id not found
             if userid is None:
                 print(self.__c_fore.RED + 'could not load user profile' + self.__c_style.RESET_ALL)
+                import time
+                time.sleep(1000)
                 continue
 
             actions.ScrapeDisplay(self, user).do()
@@ -209,7 +222,7 @@ class Scraper:
         try:
             self.__web_driver.quit()
         except AttributeError as err:
-            logger.error(err)
+            logger.error('Quit driver error: %s' % err)
 
         self.__database.close_connection()
         sys.exit(0)

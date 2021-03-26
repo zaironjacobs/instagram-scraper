@@ -47,7 +47,8 @@ class Database:
         try:
             cursor.execute(query, dict_values)
         except sqlite3.Error as err:
-            logger.error(err)
+            logger.error('error at executing query: %s' % query)
+            logger.error('error: %s' % err)
         finally:
             self.__connection.commit()
             cursor.close()
@@ -58,7 +59,8 @@ class Database:
         try:
             cursor.execute(query)
         except sqlite3.Error as err:
-            logger.error(err)
+            logger.error('error at executing query: %s' % query)
+            logger.error('error: %s' % err)
         finally:
             data = cursor.fetchall()
             cursor.close()

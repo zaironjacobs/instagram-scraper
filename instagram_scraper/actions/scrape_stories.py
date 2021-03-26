@@ -26,16 +26,15 @@ class ScrapeStories(actions.Action):
         actions.GoToLink(self._scraper, self.__user.stories_link).do()
 
         try:
-            self._web_driver.find_element_by_css_selector(constants.STORIES_TAP_CSS).click()
+            self._web_driver.find_element_by_css_selector(constants.STORIES_VIEW_CSS).click()
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
             logger.error(err)
             self.on_fail()
         else:
-            time.sleep(1)
+            time.sleep(2)
 
         progress_bar = ProgressBar(self.__stories_count, show_count=True)
         for i in range(self.__stories_count):
-            next_story_button = self._web_driver.find_element_by_css_selector(constants.STORIES_NEXT_CSS)
 
             # Check if the story is a video and download it
             try:
@@ -56,8 +55,14 @@ class ScrapeStories(actions.Action):
 
                 # Go to the next story
                 if i < self.__stories_count - 1:
-                    next_story_button.click()
-                    time.sleep(1)
+                    try:
+                        next_story_button = self._web_driver.find_element_by_css_selector(constants.STORIES_NEXT_CSS)
+                    except (NoSuchElementException, StaleElementReferenceException):
+                        logger.error('Error scraping stories')
+                        self.on_fail()
+                    else:
+                        next_story_button.click()
+                        time.sleep(1)
                 continue
 
             # Check if the story is an image and download it
@@ -79,8 +84,14 @@ class ScrapeStories(actions.Action):
 
                 # Go to the next story
                 if i < self.__stories_count - 1:
-                    next_story_button.click()
-                    time.sleep(1)
+                    try:
+                        next_story_button = self._web_driver.find_element_by_css_selector(constants.STORIES_NEXT_CSS)
+                    except (NoSuchElementException, StaleElementReferenceException):
+                        logger.error('Error scraping stories')
+                        self.on_fail()
+                    else:
+                        next_story_button.click()
+                        time.sleep(1)
                 continue
 
         progress_bar.close()

@@ -189,7 +189,16 @@ class App:
                 print('--max value has to be a number')
                 sys.exit(0)
         else:
-            max_download = 1000000000
+            max_download = 0
+
+        ###########
+        # STORIES #
+        ###########
+        self.__arg_stories = self.__args.stories
+        if self.__arg_passed(self.__arg_stories):
+            download_stories = True
+        else:
+            download_stories = False
 
         ###########
         # HEADFUL #
@@ -272,7 +281,7 @@ class App:
             print('provide at least one username or tag to scrape.')
             sys.exit(0)
 
-        self.__scraper = Scraper(headful, max_download, login_username)
+        self.__scraper = Scraper(headful, download_stories, max_download, login_username)
 
         if len(self.__users) > 0:
             self.__scraper.init_scrape_users(self.__users)
@@ -312,7 +321,8 @@ class App:
         users = []
         for input_username in usernames_to_scrape:
             input_username = input_username.lower()
-            input_username = self.__check_if_username_has_changed(input_username)
+            if self.__is_db_present():
+                input_username = self.__check_if_username_has_changed(input_username)
             user = User(input_username)
             users.append(user)
         return users

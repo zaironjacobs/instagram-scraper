@@ -90,7 +90,7 @@ def get_id_by_username_from_ig(username):
             data = json.loads(soup.text)
             return data['graphql']['user']['id']
         except (JSONDecodeError, KeyError) as err:
-            logger.error('could not retrieve user id: %s', str(err))
+            logger.error('could not retrieve user id: %s' % str(err))
 
 
 def get_user_post_count(username):
@@ -133,7 +133,7 @@ def get_username_by_id(user_id):
             try:
                 user_info = result.json()
             except JSONDecodeError as err:
-                logger.error('JSONDecodeError: %s', str(err))
+                logger.error('JSONDecodeError: %s' % str(err))
             else:
 
                 try:
@@ -154,7 +154,7 @@ def __retry_session(retries, backoff_factor, status_forcelist, method_whitelist)
         connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
-        method_whitelist=method_whitelist)
+        allowed_methods=method_whitelist)
 
     adapter = HTTPAdapter(max_retries=retry)
     session = requests.Session()

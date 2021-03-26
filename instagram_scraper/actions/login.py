@@ -22,7 +22,6 @@ class Login(actions.Action):
         """ Login """
 
         actions.GoToLink(self._scraper, constants.INSTAGRAM_URL).do()
-        time.sleep(3)
 
         # Enter username and password and click login
         try:
@@ -38,32 +37,31 @@ class Login(actions.Action):
 
             self._web_driver.find_element_by_css_selector(constants.LOGIN_BUTTON_CSS).click()
 
-            time.sleep(4)
+            time.sleep(5)
         except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
             logger.error(err)
-            print(err)
             self.on_fail()
 
         # Enter security code if asked for
-        try:
-            security_input_box = self._web_driver.find_element_by_css_selector(constants.SECURITY_INPUT_BOX_CSS)
-            security_input_box.click()
-        except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException):
-            pass
-        else:
-            time.sleep(2)
+        # try:
+        #     security_input_box = self._web_driver.find_element_by_css_selector(constants.SECURITY_BOX_BUTTON)
+        #     security_input_box.click()
+        # except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException):
+        #     pass
+        # else:
+        #     time.sleep(2)
+        #
+        #     try:
+        #         security_code = getpass.getpass(prompt='enter security code: ')
+        #         security_input_box.send_keys(security_code)
+        #         self._web_driver.find_element_by_css_selector(constants.SECURITY_BOX_BUTTON).click()
+        #     except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
+        #         logger.info(err)
+        #         self.on_fail()
+        #     else:
+        #         time.sleep(4)
 
-            try:
-                security_code = getpass.getpass(prompt='enter security code: ')
-                security_input_box.send_keys(security_code)
-                self._web_driver.find_element_by_css_selector(constants.SECURITY_BOX_BUTTON).click()
-            except (NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException) as err:
-                logger.info(err)
-                self.on_fail()
-            else:
-                time.sleep(4)
-
-        # Click no if asked to save login info
+        # Click not now if asked to save login info
         try:
             self._web_driver.find_element_by_css_selector(constants.BUTTON_NO_SAVE_LOGIN_INFO_CSS).click()
         except(NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException):
