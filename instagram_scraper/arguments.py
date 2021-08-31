@@ -12,7 +12,7 @@ message_help_required_logged_in = descriptor.format('', 'required: you need to b
 args_options = [
     ['--login-username', 'the login username' + '\n'
      + message_help_required_login_username],
-    ['--update-users', 'Check all previously scraped users for new posts' + '\n'
+    ['--update-users', 'check all previously scraped users for new posts' + '\n'
      + message_help_recommended_max],
     ['--top-tags', 'scrape top tags' + '\n'
      + message_help_required_tagname],

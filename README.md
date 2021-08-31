@@ -1,22 +1,14 @@
-Instagram Scraper
+Instagram Scraper - DEPRECATED
 =================
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/igscraper?color=blue)](https://pypi.python.org/pypi/igscraper)
-[![PyPI](https://img.shields.io/pypi/v/igscraper?color=blue)](https://pypi.python.org/pypi/igscraper)
-[![PyPI - Status](https://img.shields.io/pypi/status/igscraper)](https://pypi.python.org/pypi/igscraper)
-[![PyPI - License](https://img.shields.io/pypi/l/igscraper)](https://pypi.python.org/pypi/igscraper)
 
 A command-line application that uses Selenium to download all posts from an Instagram profile.
 
 ## Install
 
 To install:
-```console
-$ pip install igscraper
-```
 
-To upgrade:
 ```console
-$ pip install igscraper --upgrade
+$ python setup.py install
 ```
 
 ## Usage
@@ -26,16 +18,19 @@ Create a new directory and cd into the directory.
 *Use --max to specify a maximum amount of posts to scrape*
 
 Scrape a profile:
+
 ```console
 $ igscraper username1 username2 username3 --max 5
 ```
 
 To scrape stories you have to be logged in first:
+
 ```console
 $ igscraper username1 username2 username3 --max 5 --stories --login-username username
 ```
 
 Scrape a tag:
+
 ```console
 $ igscraper --recent-tags tag1 tag2 --max 10
 ```
@@ -45,6 +40,7 @@ $ igscraper --top-tags tag1 tag2 --max 3
 ```
 
 List all scraped users or tags:
+
 ```console
 $ igscraper --list-users
 ```
@@ -54,6 +50,7 @@ $ igscraper --list-tags
 ```
 
 Remove users or tags:
+
 ```console
 $ igscraper --remove-users username1 username2
 ```
@@ -63,6 +60,7 @@ $ igscraper --remove-tags tag1 tag2
 ```
 
 Remove users or tags by list number:
+
 ```console
 $ igscraper --remove-users-n 1 2
 ```
@@ -83,13 +81,8 @@ $ igscraper --remove-tags-n 1 2
 
 *`<current directory>/<tags>/<tag>/<recent>`*
 
-*Scraping the same profile again will only download new posts, provided that you are inside the same directory 
-when you run the program again.*
-
-*Scraping too much will get your IP address temporarily restricted by Instagram, sometimes instantly. To get around 
-this, it's best to login with a DUMMY account to scrape posts.*
-
-*Scraping Instagram with Selenium is significantly slower than other approaches.*
+*Scraping the same profile again will only download new posts, provided that you are inside the same directory when you
+run the program again.*
 
 ## Options
 
